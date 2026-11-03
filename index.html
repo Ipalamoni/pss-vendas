@@ -96,6 +96,14 @@ td small.u{display:block;font-weight:400;color:var(--sub);font-size:11.5px}
 .lista-user button{height:54px;border:0;border-radius:14px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08);font-weight:800;font-size:16px;color:var(--texto);text-align:left;padding:0 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
 .lista-user button span{font-size:12px;font-weight:700;color:var(--verde);background:var(--verde-claro);border-radius:8px;padding:3px 8px}
 .logo-home{display:block;width:62%;max-width:280px;margin:4px auto 4px}
+.marcas{display:flex;align-items:center;justify-content:center;gap:18px;margin:6px auto 8px;max-width:440px}
+.marcas .pss{width:56%;max-width:240px}
+.marcas .div{width:1.5px;align-self:stretch;background:var(--linha);margin:8px 0}
+.marcas .pal{width:30%;max-width:130px}
+.rodape{text-align:center;margin:26px 0 6px;color:var(--sub);font-size:11.5px;line-height:1.5}
+.rodape .por{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;font-weight:700;color:var(--verde-esc)}
+.rodape img,.login .rodape img{height:26px;width:auto;max-width:none;margin:0;display:inline-block}
+.rodape .por{white-space:nowrap}
 .ola{text-align:center;margin:0 0 4px;font-weight:800;font-size:18px}
 .escopo{text-align:center;color:var(--sub);font-size:14px;margin:0 0 14px}
 .barra-meta{height:10px;background:#EEE9DD;border-radius:6px;overflow:hidden;margin-top:6px}
@@ -116,7 +124,9 @@ td small.u{display:block;font-weight:400;color:var(--sub);font-size:11.5px}
   <button style="background:#EEE9DD;color:var(--texto)" onclick="fecharOv()">Fechar</button>
 </div></div>
 <script>
-const LOGO_SRC='logo.png';
+const LOGO_SRC='logo.png', LOGO_PAL='palamoni.png';
+const marcas=()=>`<div class="marcas"><img class="pss" src="${LOGO_SRC}" alt="Pães São Sebastião"><img class="pal" src="${LOGO_PAL}" alt="Palamoni Consultoria"></div>`;
+const rodape=()=>`<div class="rodape"><div class="por">Uma solução <img src="${LOGO_PAL}" alt="Palamoni Consultoria Empresarial"></div>© ${new Date().getFullYear()} Palamoni Consultoria Empresarial · uso licenciado à Pães São Sebastião</div>`;
 const DIRETORIA=['Ithalo Palamoni','Moisés','Leonardo Mijoler','Eduardo Mijoler'];
 const VENDEDORES=[
  ['Roni Willian de Souza','RONI WILLIAN DE SOUZA'],
@@ -306,7 +316,7 @@ function render(){
 }
 
 function telaLogin(msg){
-  return `<div class="login"><img src="${LOGO_SRC}" alt="Pães São Sebastião">
+  return `<div class="login">${marcas()}
    <div style="font-weight:800;font-size:20px;color:var(--verde-esc)">Indicadores de vendas</div>
    <form onsubmit="entrar(event)">
      <div><label for="lgU">Usuário</label><input id="lgU" type="text" autocomplete="username" autocapitalize="words" placeholder="Ex.: Luan ou Leandro Duarte" required></div>
@@ -314,7 +324,7 @@ function telaLogin(msg){
      <button class="btn-entrar" id="lgB" type="submit">Entrar</button>
      <div class="erro" id="lgE">${msg?esc(msg):''}</div>
    </form>
-   <p class="prot" style="margin-top:18px">Você só precisa entrar uma vez neste celular. Esqueceu a senha? Fale com a Controladoria.</p></div>`;
+   <p class="prot" style="margin-top:18px">Você só precisa entrar uma vez neste celular. Esqueceu a senha? Fale com a Controladoria.</p>${rodape()}</div>`;
 }
 async function entrar(ev){
   ev.preventDefault();
@@ -343,7 +353,7 @@ function telaInicio(){
   const atual=new Date(M.atualizado+'T12:00:00').toLocaleDateString('pt-BR');
   const btn=(id,txt,svg)=>`<button onclick="ir('${id}')"><div class="ic"><svg viewBox="0 0 24 24">${svg}</svg></div>${txt}</button>`;
   return topo('PSS Vendas',false)+`<main>
-   <img class="logo-home" src="${LOGO_SRC}" alt="Pães São Sebastião">
+   ${marcas()}
    <p class="ola">Olá, ${esc(U.nome.split(' ')[0])}!</p>
    <p class="escopo">${esc(esc2)} · ${ymLab(mi,true)} · dados até ${atual}</p>
    <div class="kpis">
@@ -361,7 +371,8 @@ function telaInicio(){
      ${btn('ranking','Ranking de clientes','<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 6h3v2a3 3 0 0 1-3 3M7 6H4v2a3 3 0 0 0 3 3"/>')}
      ${btn('produtos','Produtos','<path d="M5 11c0-4 3-7 7-7s7 3 7 7v8H5v-8zM5 15h14"/>')}
    </div>
-   <p class="prot" style="margin-top:16px">Atualizado em ${esc(M.gerado||'')} · PSS Controladoria</p>
+   <p class="prot" style="margin-top:16px">Dados atualizados em ${esc(M.gerado||'')}</p>
+   ${rodape()}
   </main>`;
 }
 
@@ -390,7 +401,7 @@ function telaVendas(){
       <tr><td class="l" style="color:var(--sub);white-space:normal">Bonificações (fora do faturamento)</td><td style="color:var(--sub)">${R(t.bon)}</td></tr>
     </tbody></table><p class="nota">Regras iguais às do Power BI. Impostos líquidos = impostos da venda − imposto restituído nas devoluções.</p></div>`;
   }
-  return h+'</main>';
+  return h+rodape()+'</main>';
 }
 function grafVendas(){
   const vf=escopoVend(), rf=S.rede; let labs=[],fat=[],pct=[];
@@ -418,7 +429,7 @@ function ordemPct(lst,fat,dt){
   const min=S.minRk*100, pc=x=>fat(x)>0?dt(x)/fat(x):(dt(x)>0?Infinity:0);
   return lst.sort((a,b)=>{const ga=fat(a)>=min?0:1, gb=fat(b)>=min?0:1; if(ga!==gb) return ga-gb; return pc(b)-pc(a)||dt(b)-dt(a);});
 }
-const abasOrdem=()=>`<div class="abas peq"><button class="${S.ordCli==='pct'?'on':''}" onclick="S.ordCli='pct';render()">Maior %</button><button class="${S.ordCli==='fat'?'on':''}" onclick="S.ordCli='fat';render()">Mais vendidos</button></div>`;
+const abasOrdem=(tipo)=>`<div class="abas peq"><button class="${S.ordCli==='pct'?'on':''}" onclick="S.ordCli='pct';render()">Maior % de troca</button><button class="${S.ordCli==='fat'?'on':''}" onclick="S.ordCli='fat';render()">${tipo==='loja'?'Maiores vendas':'Mais vendidos'}</button></div>`;
 const notaOrdem=()=>S.ordCli==='pct'?`Ordenado pelo maior % de trocas + devoluções sobre a venda. Quem vendeu menos de R$ ${nf0.format(S.minRk)} fica no fim da lista.`:'Ordenado pela maior venda.';
 
 // tabelas reutilizáveis
@@ -459,15 +470,15 @@ function telaClientes(){
   if(S.loja<0){
     let ls=Object.entries(porL);
     ls=S.ordCli==='pct'?ordemPct(ls,x=>x[1].fat,x=>x[1].dt):ls.sort((a,b)=>b[1].fat-a[1].fat);
-    h+=`<div class="card"><h2>Lojas ${S.rede>=0?'da rede':''} <span class="tag">${ls.length}</span></h2>${abasOrdem()}${ls.length?`<div class="rol" style="max-height:420px">${tabLojas(ls.slice(0,S.lim),true)}</div>
+    h+=`<div class="card"><h2>Lojas ${S.rede>=0?'da rede':''} <span class="tag">${ls.length}</span></h2>${abasOrdem('loja')}${ls.length?`<div class="rol" style="max-height:420px">${tabLojas(ls.slice(0,S.lim),true)}</div>
       ${ls.length>S.lim?`<button class="mais" onclick="S.lim+=30;render()">Mostrar mais lojas</button>`:''}<p class="nota">${notaOrdem()} Toque numa loja para ver só ela.</p>`:'<div class="vazio">Sem movimento no período.</div>'}</div>`;
   }
   let ps=Object.entries(porP).map(([p,o])=>({p,...o}));
   ps=S.ordCli==='pct'?ordemPct(ps,x=>x.fat,x=>x.dt):ps.sort((a,b)=>b.fat-a.fat);
   h+=`<div class="card"><h2>Produto a produto</h2>
-    ${abasOrdem()}
+    ${abasOrdem('prod')}
     ${ps.length?`<div class="rol">${tabProdutos(ps,false)}</div><p class="nota">${notaOrdem()}</p>`:'<div class="vazio">Sem movimento no período.</div>'}</div>`;
-  return h+'</main>';
+  return h+rodape()+'</main>';
 }
 
 function agrupaClientes(de,ate,nivel){
@@ -488,7 +499,7 @@ function telaRanking(){
     for(const k in a){ if(!b[k]) continue; if(a[k].fat<min||b[k].fat<min) continue; const pa=a[k].dt/a[k].fat*100, pb=b[k].dt/b[k].fat*100; lst.push({k:+k,pa,pb,d:pa-pb,fat:a[k].fat}); }
     const pior=lst.filter(x=>x.d>0).sort((x,y)=>y.d-x.d), melhor=lst.filter(x=>x.d<0).sort((x,y)=>x.d-y.d);
     const tab=(arr,tit)=>`<div class="card"><h2>${tit} <span class="tag">${arr.length}</span></h2>${arr.length?`<div class="rol" style="max-height:380px"><table><thead><tr><th>${nivel==='rede'?'Rede':'Loja'}</th><th>${ymLab(mi-1)}</th><th>${ymLab(mi)}</th><th>Variação</th></tr></thead><tbody>${arr.slice(0,S.lim).map(x=>{const n=nomeCli(x.k,nivel);return `<tr><td class="nome">${esc(n.n)}<small>${esc(n.s)}${n.s?' · ':''}venda ${Rk(x.fat)}</small></td><td>${P(x.pb)}</td><td>${pctTag(x.pa)}</td><td class="${x.d>0?'down':'up'}">${x.d>0?'▲':'▼'} ${nf1.format(Math.abs(x.d))} p.p.</td></tr>`}).join('')}</tbody></table></div>`:'<div class="vazio">Nenhum.</div>'}</div>`;
-    return h+`<p class="nota" style="margin:-4px 2px 10px">Compara o % de trocas + devoluções de ${ymLab(mi,true)} com ${ymLab(mi-1,true)} (mês “Até” do filtro). Só clientes com venda acima do mínimo nos dois meses.</p>`+tab(pior,'Pioraram')+tab(melhor,'Melhoraram')+(Math.max(pior.length,melhor.length)>S.lim?`<button class="mais" onclick="S.lim+=20;render()">Mostrar mais</button>`:'')+'</main>';
+    return h+`<p class="nota" style="margin:-4px 2px 10px">Compara o % de trocas + devoluções de ${ymLab(mi,true)} com ${ymLab(mi-1,true)} (mês “Até” do filtro). Só clientes com venda acima do mínimo nos dois meses.</p>`+tab(pior,'Pioraram')+tab(melhor,'Melhoraram')+(Math.max(pior.length,melhor.length)>S.lim?`<button class="mais" onclick="S.lim+=20;render()">Mostrar mais</button>`:'')+rodape()+'</main>';
   }
   const g=agrupaClientes(S.de,S.ate,nivel);
   let lst=Object.entries(g).filter(([k,o])=>o.fat>=min&&o.fat>0).map(([k,o])=>({k:+k,...o,p:o.dt/o.fat*100}));
@@ -500,7 +511,7 @@ function telaRanking(){
   h+=`<div class="card"><h2>${S.abaRk==='melhores'?'Menor % de trocas + devoluções':'Maior % de trocas + devoluções'}</h2>${lst.length?`<table><thead><tr><th>#</th><th style="text-align:left">${nivel==='rede'?'Rede':'Loja'}</th><th>Venda R$</th><th>DEV+TRC R$</th><th>%</th></tr></thead><tbody>
    ${lst.slice(0,S.lim).map((x,i)=>{const n=nomeCli(x.k,nivel);return `<tr><td style="color:var(--sub);font-weight:800">${i+1}</td><td class="nome" style="text-align:left">${esc(n.n)}<small>${esc(n.s)}</small></td><td>${Rt(x.fat)}</td><td>${Rt(x.dt)}</td><td>${pctTag(x.p)}</td></tr>`}).join('')}</tbody></table>
    ${lst.length>S.lim?`<button class="mais" onclick="S.lim+=20;render()">Mostrar mais</button>`:''}`:'<div class="vazio">Nenhum cliente com venda acima do mínimo.</div>'}</div>`;
-  return h+'</main>';
+  return h+rodape()+'</main>';
 }
 
 function telaProdutos(){
@@ -522,7 +533,7 @@ function telaProdutos(){
     h+=`<div class="card"><h2>Loja a loja <span class="tag">${ls.length}</span></h2>${ls.length?`<div class="rol" style="max-height:420px">${tabLojas(ls.slice(0,S.limL||30),true)}</div>
       ${ls.length>(S.limL||30)?`<button class="mais" onclick="S.limL=(S.limL||30)+30;render()">Mostrar mais lojas</button>`:''}<p class="nota">Ordenado pelo maior % de trocas + devoluções sobre a venda (lojas que venderam menos de R$ ${nf0.format(S.minRk)} ficam no fim). Toque numa loja para ver os produtos dela.</p>`:'<div class="vazio">Sem movimento.</div>'}</div>`;
   }
-  return h+'</main>';
+  return h+rodape()+'</main>';
 }
 
 // ---------- início ----------
