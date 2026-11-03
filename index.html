@@ -331,7 +331,7 @@ async function abrir(){
   document.getElementById('app').innerHTML='<div class="carregando"><div class="spin"></div><div>Carregando seus indicadores…</div></div>';
   try{ await carregarDados(); location.hash='inicio'; render(); }
   catch(err){ console.error(err); U=null; M=null; try{await SB.auth.signOut()}catch(e){}
-    document.getElementById('app').innerHTML=telaLogin('Não foi possível carregar os dados. Verifique a internet e tente de novo.'); }
+    document.getElementById('app').innerHTML=telaLogin('Não foi possível carregar os dados ('+(err&&err.message||err)+'). Verifique a internet e tente de novo.'); }
 }
 
 function telaInicio(){
@@ -519,11 +519,15 @@ function telaProdutos(){
 (async()=>{
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
   try{
+    if(!window.CFG||!/^https:\/\/.+\.supabase\.co$/.test(CFG.url||'')) throw new Error('config.js sem o endereço do Supabase (ainda está com COLE_AQUI?)');
+    if(typeof supabase==='undefined'){ // biblioteca bloqueada: tenta outro endereço
+      await new Promise((ok,err)=>{const sc=document.createElement('script');sc.src='https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js';sc.onload=ok;sc.onerror=()=>err(new Error('não consegui baixar a biblioteca de login (rede bloqueando cdn.jsdelivr.net e unpkg.com?)'));document.head.appendChild(sc);});
+    }
     SB=supabase.createClient(CFG.url,CFG.chave,{auth:{persistSession:true,autoRefreshToken:true}});
     const {data}=await SB.auth.getSession();
     U=usuarioDaSessao(data.session);
     if(U) await abrir(); else render();
-  }catch(e){ console.error(e); document.getElementById('app').innerHTML='<div class="carregando">Não foi possível iniciar o app. Verifique a internet.</div>'; }
+  }catch(e){ console.error(e); document.getElementById('app').innerHTML='<div class="carregando" style="padding:0 20px;text-align:center">Não foi possível iniciar o app. Verifique a internet.<small style="display:block;margin-top:10px;color:#9a6">Detalhe: '+esc(e&&e.message||e)+'</small></div>'; }
 })();
 </script>
 </body>

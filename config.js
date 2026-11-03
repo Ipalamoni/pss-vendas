@@ -1,7 +1,7 @@
-// CONFIGURAÇÃO DO APP — preencha com os dados do seu projeto Supabase (guia, passo 3).
-// A chave publicável (sb_publishable_...) pode ficar aqui: ela não dá acesso aos dados sem login.
+// CONFIGURAÇÃO DO APP PSS VENDAS
+// A chave publicável pode ficar aqui: sem login ela não dá acesso a nenhum dado.
 window.CFG = {
-  url: "COLE_AQUI_O_PROJECT_URL",            // ex.: https://abcdefgh.supabase.co
-  chave: "COLE_AQUI_A_PUBLISHABLE_KEY",      // começa com sb_publishable_
-  dominio: "pss-vendas.app"                  // não altere
+  url: "https://puxrntuvawwvaqtbtxle.supabase.co",
+  chave: "sb_publishable_EiKktP09tG87roER33DWmw_lyqt0G_I",
+  dominio: "pss-vendas.app"   // não altere
 };
