@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#026E57">
+<title>PSS Vendas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PSS Vendas">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<style>
+:root{
+  --laranja:#FD9B02; --laranja-esc:#C97A00; --laranja-claro:#FFF3DC;
+  --verde:#026E57; --verde-esc:#014D3D; --verde-claro:#E3F2EE;
+  --fundo:#F7F4EC; --card:#FFFFFF; --texto:#1E2A26; --sub:#5E6B66; --linha:#E6E1D5;
+  --ruim:#C4372B; --ruim-claro:#FCE9E7; --bom:#1F8A5B;
+  --raio:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--fundo);color:var(--texto);font-family:"Nunito Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:16px}
+body{padding-bottom:env(safe-area-inset-bottom)}
+button,select,input{font-family:inherit;font-size:16px}
+.topo{position:sticky;top:0;z-index:20;background:var(--verde);color:#fff;padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.topo h1{font-size:19px;margin:0;flex:1;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-voltar{background:rgba(255,255,255,.16);border:0;color:#fff;border-radius:12px;min-width:48px;height:48px;font-size:24px;font-weight:800;cursor:pointer}
+.chip-user{background:var(--laranja);color:#3a2400;border:0;border-radius:24px;height:40px;padding:0 14px;font-weight:800;cursor:pointer;white-space:nowrap}
+main{max-width:760px;margin:0 auto;padding:14px 14px 40px}
+.prot{font-size:12.5px;color:var(--sub);text-align:center;margin:2px 0 12px}
+.card{background:var(--card);border-radius:var(--raio);padding:14px;box-shadow:0 1px 3px rgba(30,42,38,.08);margin-bottom:12px}
+.card h2{font-size:16px;margin:0 0 10px;color:var(--verde-esc);font-weight:800}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kpi{background:var(--card);border-radius:var(--raio);padding:12px 13px;box-shadow:0 1px 3px rgba(30,42,38,.08);border-top:4px solid var(--verde)}
+.kpi.lar{border-top-color:var(--laranja)}
+.kpi.ruim{border-top-color:var(--ruim);background:var(--ruim-claro)}
+.kpi.wide{grid-column:1 / -1}
+.kpi{text-align:center}
+.kpi .rot{font-size:13px;color:var(--sub);font-weight:700}
+.kpi .val{font-size:22px;font-weight:800;margin-top:3px;letter-spacing:-.3px}
+.kpi .det{font-size:12.5px;color:var(--sub);margin-top:3px}
+.up{color:var(--bom);font-weight:800}.down{color:var(--ruim);font-weight:800}
+.menu{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+.menu button{background:var(--card);border:0;border-radius:var(--raio);min-height:112px;padding:14px 10px;box-shadow:0 1px 3px rgba(30,42,38,.1);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--verde-esc);font-weight:800;font-size:16.5px;border-bottom:5px solid var(--laranja)}
+.menu button:active{transform:scale(.98)}
+.menu .ic{width:44px;height:44px;border-radius:12px;background:var(--verde-claro);display:flex;align-items:center;justify-content:center}
+.menu .ic svg{width:26px;height:26px;stroke:var(--verde);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.filtros{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.filtros label{font-size:12.5px;color:var(--sub);font-weight:700;display:block;margin-bottom:3px}
+.filtros .full{grid-column:1 / -1}
+select,input[type=text],input[type=number],input[type=password]{width:100%;height:46px;border:1.5px solid var(--linha);border-radius:12px;padding:0 10px;background:#fff;color:var(--texto)}
+select:focus,input:focus{outline:2px solid var(--laranja);border-color:var(--laranja)}
+.abas{display:flex;gap:6px;background:#ECE7DA;padding:4px;border-radius:14px;margin-bottom:12px}
+.abas button{flex:1;border:0;background:transparent;height:44px;border-radius:11px;font-weight:800;color:var(--sub);cursor:pointer;font-size:15px}
+.abas button.on{background:#fff;color:var(--verde-esc);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.abas.peq button{height:38px;font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-size:11.5px;line-height:1.2;color:var(--sub);text-align:right;font-weight:800;padding:6px 4px;border-bottom:2px solid var(--linha);position:sticky;top:0;background:#fff}
+th:first-child,td:first-child{text-align:left}
+td{padding:9px 4px;border-bottom:1px solid var(--linha);text-align:right;vertical-align:top;white-space:nowrap}
+td.nome{white-space:normal}
+td.nome{font-weight:700;max-width:46vw;white-space:normal}
+td.nome small{display:block;font-weight:400;color:var(--sub);font-size:12px}
+.rol{max-height:460px;overflow:auto;margin:0 -4px;padding:0 4px}
+.pct{font-weight:800;border-radius:8px;padding:2px 6px;display:inline-block}
+.pct.r{background:var(--ruim-claro);color:var(--ruim)}
+.pct.b{background:var(--verde-claro);color:var(--verde-esc)}
+.nota{font-size:12.5px;color:var(--sub);margin:6px 0 0}
+.tag{display:inline-block;background:var(--laranja-claro);color:#7a4a00;font-size:12px;font-weight:800;border-radius:8px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+.mais{width:100%;height:46px;border:1.5px solid var(--verde);background:#fff;color:var(--verde);border-radius:12px;font-weight:800;margin-top:10px;cursor:pointer}
+.graf{position:relative;height:250px}
+.cab-cli{text-align:center;border-top:5px solid var(--laranja)}
+th.l,td.l{text-align:left}
+td small.u{display:block;font-weight:400;color:var(--sub);font-size:11.5px}
+.vazio{text-align:center;color:var(--sub);padding:26px 8px}
+.carregando{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:16px;color:var(--sub)}
+.spin{width:42px;height:42px;border:5px solid var(--verde-claro);border-top-color:var(--verde);border-radius:50%;animation:g 1s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+.login{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 24px) 16px 40px;text-align:center}
+.login img{width:78%;max-width:340px;margin:10px auto 6px;display:block}
+.login form{display:grid;gap:12px;text-align:left;margin-top:22px}
+.login label{font-size:13px;font-weight:800;color:var(--sub);display:block;margin-bottom:4px}
+.login input{height:54px;font-size:17px}
+.btn-entrar{height:56px;border:0;border-radius:14px;background:var(--verde);color:#fff;font-weight:800;font-size:17px;cursor:pointer;margin-top:4px}
+.btn-entrar:disabled{opacity:.6}
+.erro{color:var(--ruim);font-weight:700;font-size:14px;min-height:20px;text-align:center}
+.login h2{font-size:15px;color:var(--sub);margin:22px 0 10px;text-align:left;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.lista-user{display:grid;gap:8px}
+.lista-user button{height:54px;border:0;border-radius:14px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08);font-weight:800;font-size:16px;color:var(--texto);text-align:left;padding:0 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+.lista-user button span{font-size:12px;font-weight:700;color:var(--verde);background:var(--verde-claro);border-radius:8px;padding:3px 8px}
+.logo-home{display:block;width:62%;max-width:280px;margin:4px auto 4px}
+.ola{text-align:center;margin:0 0 4px;font-weight:800;font-size:18px}
+.escopo{text-align:center;color:var(--sub);font-size:14px;margin:0 0 14px}
+.barra-meta{height:10px;background:#EEE9DD;border-radius:6px;overflow:hidden;margin-top:6px}
+.barra-meta div{height:100%;background:var(--laranja)}
+.sair{position:fixed}
+.ov{display:none}
+.ov.on{display:flex;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;align-items:flex-end;justify-content:center}
+.ov .box{background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+.ov .box button{width:100%;height:52px;border-radius:14px;border:0;font-weight:800;font-size:16px;margin-top:8px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="app"><div class="carregando"><div class="spin"></div><div>Carregando dados…</div></div></div>
+<div class="ov" id="ov"><div class="box">
+  <div style="font-weight:800;font-size:17px" id="ovNome"></div>
+  <div style="color:var(--sub);font-size:14px;margin-top:2px" id="ovPerfil"></div>
+  <button style="background:var(--verde);color:#fff" onclick="sair()">Trocar de usuário</button>
+  <button style="background:#EEE9DD;color:var(--texto)" onclick="fecharOv()">Fechar</button>
+</div></div>
+<script>
+const LOGO_SRC='logo.png';
+const DIRETORIA=['Ithalo Palamoni','Moisés','Leonardo Mijoler','Eduardo Mijoler'];
+const VENDEDORES=[
+ ['Roni Willian de Souza','RONI WILLIAN DE SOUZA'],
+ ['Luan Medeiros Molina','LUAN MEDEIROS MOLINA'],
+ ['Cíntia Helena de Oliveira','CINTIA HELENA DE OLIVEIRA'],
+ ['Claudinei Antônio de Almeida Filho','CLAUDINEI ANTONIO DE ALMEIDA FILHO'],
+ ['Leandro Duarte','LEANDRO DUARTE (P)'],
+ ['Henrique','HENRIQUE  (P)'],
+ ['Jair Martins Júnior','JAIR MARTINS JUNIOR'],
+ ['Kerlen','KERLEN (P)'],
+ ['Leandro Molina','LEANDRO MOLINA (P)'],
+ ['Rodrigo de Azevedo','RODRIGO DE AZEVEDO FAZZIO']
+];
+const LIMITE=3; // % troca+devolução sobre venda
+const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+let M=null, DET={}, carregou2025=true, SB=null;
+let U=null; // usuário
+const S={de:null,ate:null,vend:-1,rede:-1,loja:-1,busca:'',ordCli:'trc',abaRk:'piores',nivelRk:'loja',minRk:1000,abaPr:'todos',lim:20,limL:30};
+const charts=[];
+
+// ---------- formatação ----------
+const nf0=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0});
+const nf1=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const R=c=>'R$ '+nf0.format(Math.round(c/100));
+const Rk=c=>{const v=c/100;if(Math.abs(v)>=1e6)return 'R$ '+nf1.format(v/1e6)+' mi';if(Math.abs(v)>=1e4)return 'R$ '+nf0.format(v/1e3)+' mil';return 'R$ '+nf0.format(v)};
+const Q=n=>nf0.format(n);
+const Rt=c=>{const v=c/100;if(Math.abs(v)>=1e6)return nf1.format(v/1e6)+' mi';if(Math.abs(v)>=1e4)return nf0.format(v/1e3)+' mil';return nf0.format(v)};
+const P=x=>isFinite(x)?nf1.format(x)+'%':'–';
+const pctTag=x=>`<span class="pct ${x>LIMITE?'r':'b'}">${P(x)}</span>`;
+const ymLab=(i,longo)=>{const y=M.ym[i];const a=Math.floor(y/100),m=y%100;return longo?MESES[m-1].replace(/^./,s=>s.toUpperCase())+'/'+a:MESES[m-1]+'/'+String(a).slice(2)};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const titulo=s=>s.toLowerCase().replace(/(^|\s|\(|\/|-)(\S)/g,(m,a,b)=>a+b.toUpperCase());
+
+// ---------- dados ----------
+function slugLogin(t){return String(t).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'.').replace(/^\.+|\.+$/g,'');}
+function usuarioDaSessao(sess){
+  const m=(sess&&sess.user&&sess.user.app_metadata)||{};
+  if(m.perfil!=='dir'&&m.perfil!=='vend') return null;
+  return {nome:m.nome||'Usuário',perfil:m.perfil,colab:m.colab||'',arquivo:m.arquivo||''};
+}
+async function gunzipJson(blob){
+  if('DecompressionStream' in window){
+    const st=blob.stream().pipeThrough(new DecompressionStream('gzip'));
+    return JSON.parse(await new Response(st).text());
+  }
+  if(!window.pako) await new Promise((ok,err)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js';sc.onload=ok;sc.onerror=err;document.head.appendChild(sc);});
+  return JSON.parse(pako.ungzip(new Uint8Array(await blob.arrayBuffer()),{to:'string'}));
+}
+async function carregarDados(){
+  const caminho=U.perfil==='dir'?'dir/dados.json.gz':'vend/'+U.arquivo+'.json.gz';
+  const {data,error}=await SB.storage.from('dados').download(caminho+'?t='+Date.now());
+  if(error) throw new Error('download: '+(error.message||error));
+  const j=await gunzipJson(data);
+  DET={todos:j.det.map(col=>Int32Array.from(col))}; delete j.det;
+  M=j; M.vi={};M.vend.forEach((v,i)=>M.vi[v]=i);
+  M.ri={};M.rede.forEach((r,i)=>M.ri[r]=i);
+  M.cr=Int16Array.from(M.cli.map(c=>M.ri[c[1]]??-1));
+  S.de=S.ate=M.ym.length-1; S.vend=-1;S.rede=-1;S.loja=-1;S.busca=''; cacheCli={k:null};
+}
+function precisa2025(){return false}
+function escopoVend(){ if(U.perfil==='vend') return M.vi[U.colab]; return S.vend; }
+// percorre linhas de detalhe no período/escopo; filtro opcional de rede e loja
+function cada(de,ate,fn,o={}){
+  const vf=o.vend===undefined?escopoVend():o.vend, rf=o.rede??-1, lf=o.loja??-1, cr=M.cr;
+  for(const d of Object.values(DET)){
+    const [m,v,c,p,fat,qv,dev,qd,trc,qt]=d; const n=m.length;
+    for(let i=0;i<n;i++){
+      const mi=m[i]; if(mi<de||mi>ate) continue;
+      if(vf>=0 && v[i]!==vf) continue;
+      const ci=c[i];
+      if(lf>=0){ if(ci!==lf) continue; } else if(rf>=0 && cr[ci]!==rf) continue;
+      fn(mi,ci,p[i],fat[i],qv[i],dev[i],qd[i],trc[i],qt[i],v[i]);
+    }
+  }
+}
+function resumo(de,ate,o={}){
+  const vf=o.vend===undefined?escopoVend():o.vend, rf=o.rede??-1;
+  const t={fat:0,qv:0,dev:0,qd:0,trc:0,qt:0,bon:0,imp:0,cus:0};
+  for(const r of M.resumo){ if(r[0]<de||r[0]>ate) continue; if(vf>=0&&r[1]!==vf) continue; if(rf>=0&&r[2]!==rf) continue;
+    t.fat+=r[3];t.qv+=r[4];t.dev+=r[5];t.qd+=r[6];t.trc+=r[7];t.qt+=r[8];t.bon+=r[9];t.imp+=r[10];t.cus+=r[11]; }
+  t.dt=t.dev+t.trc; t.qdt=t.qd+t.qt; t.pct=t.fat?t.dt/t.fat*100:NaN;
+  t.rl=t.fat-t.dt-t.imp; t.lb=t.rl-t.cus; t.mg=t.rl?t.lb/t.rl*100:NaN;
+  return t;
+}
+function prefixo(mi){const y=M.ym[mi];return String(Math.floor(y/100))+'-'+String(y%100).padStart(2,'0');}
+function diasUteis(mi){ // dias com faturamento na empresa no mês
+  return (M.dias&&M.dias[String(M.ym[mi])])||0;
+}
+
+// ---------- navegação ----------
+function ir(p){ if(location.hash!=='#'+p) location.hash=p; else render(); window.scrollTo(0,0); }
+window.addEventListener('hashchange',()=>{S.lim=20;render();window.scrollTo(0,0)});
+function pagina(){ const h=location.hash.replace('#',''); return ['vendas','clientes','ranking','produtos'].includes(h)?h:'inicio'; }
+
+function topo(t,voltar){
+  const ini=U.nome.split(' ').map(s=>s[0]).slice(0,2).join('');
+  return `<div class="topo">${voltar?`<button class="btn-voltar" aria-label="Voltar" onclick="ir('inicio')">‹</button>`:''}<h1>${t}</h1><button class="chip-user" onclick="abrirOv()">${esc(ini)} ▾</button></div>`;
+}
+function abrirOv(){ document.getElementById('ovNome').textContent=U.nome; document.getElementById('ovPerfil').textContent=U.perfil==='dir'?'Diretoria — vê todos os vendedores':'Vendedor — vê só os próprios dados'; document.getElementById('ov').classList.add('on'); }
+function fecharOv(){ document.getElementById('ov').classList.remove('on'); }
+async function sair(){ fecharOv(); try{await SB.auth.signOut()}catch(e){} U=null; M=null; DET={}; location.hash=''; render(); }
+
+// clientes (lojas) que o escopo (vendedor) atende
+let cacheCli={k:null,set:null};
+function cliSet(){
+  const vf=escopoVend(), k=vf+'|'+carregou2025;
+  if(cacheCli.k!==k){ const set=new Set(); cada(0,M.ym.length-1,(mi,c)=>set.add(c),{vend:vf}); cacheCli={k,set}; }
+  return cacheCli.set;
+}
+// filtros: período, vendedor (diretoria), rede, loja
+function filtrosHtml(opts={}){
+  const ops=M.ym.map((y,i)=>`<option value="${i}">${ymLab(i,true)}</option>`).reverse().join('');
+  let h=`<div class="card"><div class="filtros">
+    <div><label>De</label><select id="fDe" onchange="setPer('de',this.value)">${ops}</select></div>
+    <div><label>Até</label><select id="fAte" onchange="setPer('ate',this.value)">${ops}</select></div>`;
+  if(U.perfil==='dir'){
+    const vend=VENDEDORES.map(v=>M.vi[v[1]]).filter(i=>i!==undefined);
+    const outros=M.vend.map((v,i)=>i).filter(i=>!vend.includes(i));
+    h+=`<div class="full"><label>Vendedor</label><select id="fVend" onchange="S.vend=+this.value;S.rede=-1;S.loja=-1;S.busca='';S.lim=20;render()">
+      <option value="-1">Todos os vendedores (empresa)</option>
+      <optgroup label="Vendedores">${vend.map(i=>`<option value="${i}">${esc(nomeVend(i))}</option>`).join('')}</optgroup>
+      <optgroup label="Outros colaboradores">${outros.map(i=>`<option value="${i}">${esc(titulo(M.vend[i]))}</option>`).join('')}</optgroup>
+    </select></div>`;
+  }
+  if(opts.rede){
+    const set=cliSet(), cont={};
+    set.forEach(c=>{const r=M.cr[c]; cont[r]=(cont[r]||0)+1;});
+    const lr=Object.keys(cont).map(Number).sort((a,b)=>M.rede[a]==='SEM REDE'?1:M.rede[b]==='SEM REDE'?-1:M.rede[a].localeCompare(M.rede[b]));
+    if(S.rede>=0 && !cont[S.rede]){ S.rede=-1; S.loja=-1; }
+    h+=`<div class="full"><label>Rede</label><select onchange="S.rede=+this.value;S.loja=-1;S.busca='';S.lim=20;render()">
+      <option value="-1">Todas as redes</option>${lr.map(r=>`<option ${r===S.rede?'selected':''} value="${r}">${esc(titulo(M.rede[r]))} (${cont[r]})</option>`).join('')}</select></div>`;
+    if(opts.loja && S.rede>=0){
+      let lojas=[...set].filter(c=>M.cr[c]===S.rede);
+      const b=S.busca.trim().toUpperCase();
+      if(b) lojas=lojas.filter(c=>(M.cli[c][0]+' '+M.cli[c][2]+' '+M.cli[c][4]).toUpperCase().includes(b)||c===S.loja);
+      lojas.sort((a,c)=>M.cli[a][0].localeCompare(M.cli[c][0],'pt',{numeric:true}));
+      h+=`<div class="full"><label>Nome (loja)</label><select onchange="S.loja=+this.value;S.lim=20;render()"><option value="-1">Todas as lojas da rede</option>${lojas.map(c=>`<option ${c===S.loja?'selected':''} value="${c}">${esc(M.cli[c][0])}${M.cli[c][4]?' – '+esc(titulo(M.cli[c][4])):''}</option>`).join('')}</select></div>`;
+      if(cont[S.rede]>15) h+=`<div class="full"><input type="text" placeholder="Buscar loja pelo nome ou cidade" value="${esc(S.busca)}" onchange="S.busca=this.value;render()"></div>`;
+    }
+  }
+  h+=(opts.extra||'')+`</div>${!carregou2025&&precisa2025()?'<p class="nota">Carregando 2025…</p>':''}</div>`;
+  return h;
+}
+function nomeVend(i){ const v=VENDEDORES.find(x=>x[1]===M.vend[i]); return v?v[0]:titulo(M.vend[i]); }
+function setPer(k,v){ v=+v; S[k]=v; if(S.de>S.ate){ if(k==='de') S.ate=v; else S.de=v; } S.lim=20; render(); }
+function aplicarFiltros(){
+  const a=document.getElementById('fDe'),b=document.getElementById('fAte'),c=document.getElementById('fVend');
+  if(a) a.value=S.de; if(b) b.value=S.ate; if(c) c.value=S.vend;
+}
+function limparCharts(){ while(charts.length) charts.pop().destroy(); }
+function periodoTxt(){ return ymLab(S.de,true)+(S.de!==S.ate?' a '+ymLab(S.ate,true):''); }
+function escopoTxt(){
+  const p=[]; const vf=escopoVend();
+  if(U.perfil==='dir') p.push(vf>=0?nomeVend(vf):'Empresa toda');
+  p.push(S.loja>=0?M.cli[S.loja][0]:S.rede>=0?titulo(M.rede[S.rede]):'Todas as redes');
+  return p.join(' · ');
+}
+
+// ---------- rótulos de dados nos gráficos ----------
+const rotulos={id:'rotulos',afterDatasetsDraw(ch){
+  const ctx=ch.ctx;
+  ch.data.datasets.forEach((ds,di)=>{ const o=ds.rot; if(!o) return; const meta=ch.getDatasetMeta(di); if(meta.hidden) return;
+    meta.data.forEach((el,i)=>{ const v=ds.data[i]; if(v==null) return; const txt=o.fmt(v);
+      ctx.save(); ctx.font=`800 ${o.size}px "Nunito Sans", system-ui, sans-serif`;
+      if(o.vertical){
+        ctx.textBaseline='middle';
+        if(o.tipo==='bar'){ const h=el.base-el.y; ctx.translate(el.x,el.y+5); ctx.rotate(-Math.PI/2); ctx.textAlign='right';
+          ctx.fillStyle=h>ctx.measureText(txt).width+8?'#fff':o.cor; if(ctx.fillStyle==o.cor){ctx.textAlign='left';ctx.translate(10,0);} }
+        else { ctx.translate(el.x,el.y-8); ctx.rotate(-Math.PI/2); ctx.textAlign='left'; ctx.fillStyle=o.cor; }
+        ctx.fillText(txt,0,0);
+      } else { ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillStyle=o.cor; ctx.fillText(txt,el.x,el.y-5); }
+      ctx.restore(); }); });
+}};
+const fmtMi=v=>v>=1e6?nf1.format(v/1e6)+' mi':v>=1e3?nf0.format(v/1e3)+' mil':nf0.format(v);
+
+// ---------- telas ----------
+function render(){
+  limparCharts();
+  const app=document.getElementById('app');
+  if(!U||!M){ app.innerHTML=telaLogin(); return; }
+  const p=pagina();
+  if(p==='inicio') app.innerHTML=telaInicio();
+  if(p==='vendas'){ app.innerHTML=telaVendas(); aplicarFiltros(); grafVendas(); }
+  if(p==='clientes'){ app.innerHTML=telaClientes(); aplicarFiltros(); }
+  if(p==='ranking'){ app.innerHTML=telaRanking(); aplicarFiltros(); }
+  if(p==='produtos'){ app.innerHTML=telaProdutos(); aplicarFiltros(); }
+}
+
+function telaLogin(msg){
+  return `<div class="login"><img src="${LOGO_SRC}" alt="Pães São Sebastião">
+   <div style="font-weight:800;font-size:20px;color:var(--verde-esc)">Indicadores de vendas</div>
+   <form onsubmit="entrar(event)">
+     <div><label for="lgU">Usuário</label><input id="lgU" type="text" autocomplete="username" autocapitalize="words" placeholder="Ex.: Luan ou Leandro Duarte" required></div>
+     <div><label for="lgS">Senha</label><input id="lgS" type="password" autocomplete="current-password" required></div>
+     <button class="btn-entrar" id="lgB" type="submit">Entrar</button>
+     <div class="erro" id="lgE">${msg?esc(msg):''}</div>
+   </form>
+   <p class="prot" style="margin-top:18px">Você só precisa entrar uma vez neste celular. Esqueceu a senha? Fale com a Controladoria.</p></div>`;
+}
+async function entrar(ev){
+  ev.preventDefault();
+  const u=document.getElementById('lgU').value, p=document.getElementById('lgS').value, e=document.getElementById('lgE'), b=document.getElementById('lgB');
+  if(!u.trim()||!p){ e.textContent='Preencha usuário e senha.'; return; }
+  b.disabled=true; b.textContent='Entrando…'; e.textContent='';
+  const {data,error}=await SB.auth.signInWithPassword({email:slugLogin(u)+'@'+CFG.dominio,password:p});
+  if(error){ b.disabled=false; b.textContent='Entrar'; e.textContent=/invalid/i.test(error.message)?'Usuário ou senha incorretos.':/banned/i.test(error.message)?'Acesso bloqueado. Fale com a Controladoria.':'Não foi possível entrar: '+error.message; return; }
+  U=usuarioDaSessao(data.session);
+  if(!U){ await SB.auth.signOut(); b.disabled=false; b.textContent='Entrar'; e.textContent='Usuário sem perfil configurado.'; return; }
+  await abrir();
+}
+async function abrir(){
+  document.getElementById('app').innerHTML='<div class="carregando"><div class="spin"></div><div>Carregando seus indicadores…</div></div>';
+  try{ await carregarDados(); location.hash='inicio'; render(); }
+  catch(err){ console.error(err); U=null; M=null; try{await SB.auth.signOut()}catch(e){}
+    document.getElementById('app').innerHTML=telaLogin('Não foi possível carregar os dados. Verifique a internet e tente de novo.'); }
+}
+
+function telaInicio(){
+  const mi=M.ym.length-1, t=resumo(mi,mi), ant=resumo(mi-1,mi-1);
+  const du=diasUteis(mi), media=du?t.fat/du:0;
+  const varF=ant.fat?(t.fat/ant.fat-1)*100:NaN, varP=t.pct-ant.pct;
+  const vf=escopoVend();
+  const esc2=U.perfil==='dir'?(vf>=0?'Vendedor: '+nomeVend(vf):'Visão: empresa toda'):'Seus clientes';
+  const atual=new Date(M.atualizado+'T12:00:00').toLocaleDateString('pt-BR');
+  const btn=(id,txt,svg)=>`<button onclick="ir('${id}')"><div class="ic"><svg viewBox="0 0 24 24">${svg}</svg></div>${txt}</button>`;
+  return topo('PSS Vendas',false)+`<main>
+   <img class="logo-home" src="${LOGO_SRC}" alt="Pães São Sebastião">
+   <p class="ola">Olá, ${esc(U.nome.split(' ')[0])}!</p>
+   <p class="escopo">${esc(esc2)} · ${ymLab(mi,true)} · dados até ${atual}</p>
+   <div class="kpis">
+     <div class="kpi wide"><div class="rot">Venda do mês</div><div class="val">${R(t.fat)}</div>
+       <div class="det">${isFinite(varF)?`<span class="${varF>=0?'up':'down'}">${varF>=0?'▲':'▼'} ${P(Math.abs(varF))}</span> vs ${ymLab(mi-1)} (${Rk(ant.fat)})`:''}</div></div>
+     <div class="kpi lar"><div class="rot">Trocas + devoluções</div><div class="val">${R(t.dt)}</div><div class="det">${Q(t.qdt)} unidades</div></div>
+     <div class="kpi ${t.pct>LIMITE?'ruim':''}"><div class="rot">% sobre a venda</div><div class="val">${P(t.pct)}</div>
+       <div class="det">${isFinite(varP)?`<span class="${varP<=0?'up':'down'}">${varP<=0?'▼':'▲'} ${nf1.format(Math.abs(varP))} p.p.</span> vs ${ymLab(mi-1)}`:''} · limite ${LIMITE}%</div></div>
+     <div class="kpi"><div class="rot">Dias úteis</div><div class="val">${du}</div><div class="det">dias com faturamento</div></div>
+     <div class="kpi"><div class="rot">Venda média por dia</div><div class="val">${Rk(media)}</div><div class="det">venda ÷ dias úteis</div></div>
+   </div>
+   <div class="menu">
+     ${btn('vendas','Vendas','<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')}
+     ${btn('clientes','Clientes','<path d="M3 9l1.5-5h15L21 9M3 9h18M3 9v11h18V9M9 20v-6h6v6"/>')}
+     ${btn('ranking','Ranking de clientes','<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 6h3v2a3 3 0 0 1-3 3M7 6H4v2a3 3 0 0 0 3 3"/>')}
+     ${btn('produtos','Produtos','<path d="M5 11c0-4 3-7 7-7s7 3 7 7v8H5v-8zM5 15h14"/>')}
+   </div>
+   <p class="prot" style="margin-top:16px">Atualizado em ${esc(M.gerado||'')} · PSS Controladoria</p>
+  </main>`;
+}
+
+function telaVendas(){
+  const o={rede:S.rede}, t=resumo(S.de,S.ate,o);
+  let h=topo('Vendas',true)+'<main>'+filtrosHtml({rede:true});
+  h+=`<div class="kpis">
+   <div class="kpi wide"><div class="rot">Venda total no período</div><div class="val">${R(t.fat)}</div><div class="det">${Q(t.qv)} unidades vendidas</div></div>
+   <div class="kpi lar"><div class="rot">Trocas + devoluções</div><div class="val">${R(t.dt)}</div><div class="det">Trocas ${Rk(t.trc)}<br>Devoluções ${Rk(t.dev)}</div></div>
+   <div class="kpi ${t.pct>LIMITE?'ruim':''}"><div class="rot">% sobre a venda</div><div class="val">${P(t.pct)}</div><div class="det">${Q(t.qdt)} un. voltaram<br>limite ${LIMITE}%</div></div>
+  </div>`;
+  h+=`<div class="card"><h2>${S.de===S.ate?'Venda por dia':'Venda por mês'}</h2><div class="graf"><canvas id="g1"></canvas></div></div>`;
+  h+=`<div class="card"><h2>% de trocas + devoluções sobre a venda</h2><div class="graf" style="height:230px"><canvas id="g2"></canvas></div><p class="nota">Linha tracejada vermelha = limite de ${LIMITE}%. Toque num ponto para ver o detalhe.</p></div>`;
+  let rows='';
+  for(let i=S.ate;i>=S.de;i--){ const r=resumo(i,i,o); rows+=`<tr><td class="nome">${ymLab(i,true)}</td><td>${Rt(r.fat)}</td><td>${Rt(r.dt)}</td><td>${pctTag(r.pct)}</td></tr>`; }
+  h+=`<div class="card"><h2>Mês a mês</h2><div class="rol"><table><thead><tr><th>Mês</th><th>Venda R$</th><th>DEV+TRC R$</th><th>%</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  if(U.perfil==='dir'){
+    h+=`<div class="card"><h2>Resultado <span class="tag">só diretoria</span></h2><table><tbody>
+      <tr><td class="l">Faturamento</td><td>${R(t.fat)}</td></tr>
+      <tr><td class="l">(−) Trocas + devoluções</td><td>${R(t.dt)}</td></tr>
+      <tr><td class="l" style="white-space:normal">(−) Impostos líquidos</td><td>${R(t.imp)}</td></tr>
+      <tr><td class="l"><b>Receita líquida</b></td><td><b>${R(t.rl)}</b></td></tr>
+      <tr><td class="l">(−) Custo novo total</td><td>${R(t.cus)}</td></tr>
+      <tr><td class="l"><b>Lucro bruto</b></td><td><b>${R(t.lb)}</b></td></tr>
+      <tr><td class="l"><b>Margem bruta</b></td><td><b>${P(t.mg)}</b></td></tr>
+      <tr><td class="l" style="color:var(--sub);white-space:normal">Bonificações (fora do faturamento)</td><td style="color:var(--sub)">${R(t.bon)}</td></tr>
+    </tbody></table><p class="nota">Regras iguais às do Power BI. Impostos líquidos = impostos da venda − imposto restituído nas devoluções.</p></div>`;
+  }
+  return h+'</main>';
+}
+function grafVendas(){
+  const vf=escopoVend(), rf=S.rede; let labs=[],fat=[],pct=[];
+  if(S.de===S.ate){
+    const pre=prefixo(S.de); const m={};
+    for(const d of M.diario){ if(!d[0].startsWith(pre)) continue; if(vf>=0&&d[1]!==vf) continue; if(rf>=0&&d[2]!==rf) continue; const k=d[0]; m[k]=m[k]||[0,0]; m[k][0]+=d[3]; m[k][1]+=d[4]+d[5]; }
+    Object.keys(m).sort().forEach(k=>{ if(m[k][0]<=0) return; labs.push(k.slice(8)+'/'+k.slice(5,7)); fat.push(m[k][0]/100); pct.push(m[k][1]/m[k][0]*100); });
+  } else {
+    for(let i=S.de;i<=S.ate;i++){ const r=resumo(i,i,{rede:rf}); labs.push(ymLab(i)); fat.push(r.fat/100); pct.push(isFinite(r.pct)?r.pct:null); }
+  }
+  const muitos=labs.length>8, tam=labs.length>16?9.5:labs.length>8?10.5:12;
+  Chart.defaults.font.family='"Nunito Sans", system-ui, sans-serif'; Chart.defaults.color='#5E6B66';
+  charts.push(new Chart(document.getElementById('g1'),{type:'bar',plugins:[rotulos],data:{labels:labs,datasets:[{data:fat,backgroundColor:'#026E57',borderRadius:6,maxBarThickness:46,rot:{fmt:fmtMi,size:tam,cor:'#014D3D',vertical:muitos,tipo:'bar'}}]},
+    options:{animation:false,maintainAspectRatio:false,layout:{padding:{top:muitos?4:22}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'R$ '+nf0.format(c.raw)}}},
+      scales:{y:{grace:'8%',ticks:{callback:fmtMi,maxTicksLimit:6},grid:{color:'#EEE9DD'}},x:{grid:{display:false}}}}}));
+  charts.push(new Chart(document.getElementById('g2'),{type:'line',plugins:[rotulos],data:{labels:labs,datasets:[
+      {data:pct,borderColor:'#FD9B02',backgroundColor:'#FD9B02',pointRadius:4,tension:.25,spanGaps:true,rot:{fmt:v=>nf1.format(v)+'%',size:tam,cor:'#8A5400',vertical:muitos,tipo:'line'}},
+      {data:labs.map(()=>LIMITE),borderColor:'#C4372B',borderDash:[6,5],pointRadius:0,borderWidth:1.5}]},
+    options:{animation:false,maintainAspectRatio:false,layout:{padding:{top:muitos?34:22}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.datasetIndex?'Limite '+LIMITE+'%':P(c.raw)}}},
+      scales:{y:{beginAtZero:true,grace:'10%',ticks:{callback:v=>nf1.format(v)+'%',maxTicksLimit:6},grid:{color:'#EEE9DD'}},x:{grid:{display:false}}}}}));
+}
+
+// tabelas reutilizáveis
+function tabProdutos(lst,mostrarRank){
+  return `<table><thead><tr>${mostrarRank?'<th>#</th>':''}<th class="l">Produto</th><th>Venda<br>R$ · un.</th><th>DEV+TRC<br>R$ · un.</th><th>%</th></tr></thead><tbody>
+   ${lst.map((x,i)=>`<tr>${mostrarRank?`<td style="color:var(--sub);font-weight:800">${i+1}</td>`:''}<td class="nome l">${esc(titulo(M.prod[x.p][0]))}</td><td>${Rt(x.fat)}<small class="u">${Q(x.qv)} un.</small></td><td>${Rt(x.dt)}<small class="u">${Q(x.qdt)} un.</small></td><td>${pctTag(x.fat?x.dt/x.fat*100:NaN)}</td></tr>`).join('')}</tbody></table>`;
+}
+function tabLojas(ls,clicavel){
+  return `<table><thead><tr><th class="l">Loja</th><th>Venda<br>R$ · un.</th><th>DEV+TRC<br>R$ · un.</th><th>%</th></tr></thead><tbody>
+   ${ls.map(([c,o])=>`<tr ${clicavel?`onclick="S.rede=M.cr[${c}];S.loja=${c};S.lim=20;render();window.scrollTo(0,0)" style="cursor:pointer"`:''}><td class="nome l">${esc(M.cli[c][0])}<small>${esc(titulo(M.cli[c][1]))} · ${esc(titulo(M.cli[c][4]))}</small></td><td>${Rt(o.fat)}<small class="u">${Q(o.qv)} un.</small></td><td>${Rt(o.dt)}<small class="u">${Q(o.qdt)} un.</small></td><td>${pctTag(o.fat?o.dt/o.fat*100:NaN)}</td></tr>`).join('')}</tbody></table>`;
+}
+function agregaDetalhe(){
+  const tot={fat:0,qv:0,dev:0,qd:0,trc:0,qt:0}, porP={}, porL={};
+  cada(S.de,S.ate,(mi,c,p,fat,qv,dev,qd,trc,qt)=>{
+    tot.fat+=fat;tot.qv+=qv;tot.dev+=dev;tot.qd+=qd;tot.trc+=trc;tot.qt+=qt;
+    const o=porP[p]||(porP[p]={fat:0,qv:0,dt:0,qdt:0}); o.fat+=fat;o.qv+=qv;o.dt+=dev+trc;o.qdt+=qd+qt;
+    const l=porL[c]||(porL[c]={fat:0,qv:0,dt:0,qdt:0}); l.fat+=fat;l.qv+=qv;l.dt+=dev+trc;l.qdt+=qd+qt; },{rede:S.rede,loja:S.loja});
+  tot.dt=tot.dev+tot.trc; tot.qdt=tot.qd+tot.qt; tot.pct=tot.fat?tot.dt/tot.fat*100:NaN;
+  return {tot,porP,porL};
+}
+function cabecalhoEscopo(nLojas){
+  const l=S.loja>=0?M.cli[S.loja]:null;
+  return `<div class="card cab-cli"><div style="font-weight:800;font-size:17px">${esc(l?l[0]:S.rede>=0?titulo(M.rede[S.rede])+' – todas as lojas':'Todas as redes')}</div>
+    <div class="nota">${l?esc(titulo(l[2]))+' · '+esc(titulo(l[4]))+' · cód. '+l[3]:nLojas+' lojas com movimento'} · ${periodoTxt()}${U.perfil==='dir'&&escopoVend()>=0?' · '+esc(nomeVend(escopoVend())):''}</div></div>`;
+}
+function cardsTotais(tot){
+  return `<div class="kpis">
+    <div class="kpi"><div class="rot">Venda</div><div class="val">${R(tot.fat)}</div><div class="det">${Q(tot.qv)} un.</div></div>
+    <div class="kpi lar"><div class="rot">$ DEV + TRC</div><div class="val">${R(tot.dt)}</div><div class="det">${Q(tot.qdt)} un. voltaram</div></div>
+    <div class="kpi wide ${tot.pct>LIMITE?'ruim':''}"><div class="rot">% trocas + devoluções sobre a venda</div><div class="val">${P(tot.pct)}</div><div class="det">${tot.pct>LIMITE?'Acima do limite de '+LIMITE+'%':'Dentro do limite de '+LIMITE+'%'}<br>Trocas ${R(tot.trc)} · Devoluções ${R(tot.dev)}</div></div>
+   </div>`;
+}
+
+function telaClientes(){
+  let h=topo('Clientes',true)+'<main>'+filtrosHtml({rede:true,loja:true});
+  const {tot,porP,porL}=agregaDetalhe(); const nL=Object.keys(porL).length;
+  h+=cabecalhoEscopo(nL)+cardsTotais(tot);
+  if(S.loja<0){
+    const ls=Object.entries(porL).sort((a,b)=>b[1].fat-a[1].fat);
+    h+=`<div class="card"><h2>Lojas ${S.rede>=0?'da rede':''} <span class="tag">${ls.length}</span></h2>${ls.length?`<div class="rol" style="max-height:420px">${tabLojas(ls.slice(0,S.lim),true)}</div>
+      ${ls.length>S.lim?`<button class="mais" onclick="S.lim+=30;render()">Mostrar mais lojas</button>`:''}<p class="nota">Ordenado pela venda. Toque numa loja para ver só ela.</p>`:'<div class="vazio">Sem movimento no período.</div>'}</div>`;
+  }
+  const ps=Object.entries(porP).map(([p,o])=>({p,...o})).sort((a,b)=>S.ordCli==='trc'?b.dt-a.dt:b.fat-a.fat);
+  h+=`<div class="card"><h2>Produto a produto</h2>
+    <div class="abas peq"><button class="${S.ordCli==='trc'?'on':''}" onclick="S.ordCli='trc';render()">Mais trocados</button><button class="${S.ordCli==='fat'?'on':''}" onclick="S.ordCli='fat';render()">Mais vendidos</button></div>
+    ${ps.length?`<div class="rol">${tabProdutos(ps,false)}</div>`:'<div class="vazio">Sem movimento no período.</div>'}</div>`;
+  return h+'</main>';
+}
+
+function agrupaClientes(de,ate,nivel){
+  const out={};
+  cada(de,ate,(mi,c,p,fat,qv,dev,qd,trc,qt)=>{ const k=nivel==='rede'?M.cr[c]:c; const o=out[k]||(out[k]={fat:0,dt:0,qdt:0}); o.fat+=fat;o.dt+=dev+trc;o.qdt+=qd+qt; },{rede:nivel==='loja'?S.rede:-1});
+  return out;
+}
+function nomeCli(k,nivel){ return nivel==='rede'?{n:titulo(M.rede[k]),s:''}:{n:M.cli[k][0],s:titulo(M.cli[k][1])+' · '+titulo(M.cli[k][4])}; }
+function telaRanking(){
+  const nivel=S.nivelRk, min=S.minRk*100;
+  const extra=`<div><label>Ver por</label><select onchange="S.nivelRk=this.value;S.lim=20;render()"><option value="loja" ${nivel==='loja'?'selected':''}>Loja</option><option value="rede" ${nivel==='rede'?'selected':''}>Rede</option></select></div>
+   <div><label>Venda mínima (R$)</label><input type="number" inputmode="numeric" value="${S.minRk}" onchange="S.minRk=Math.max(0,+this.value||0);S.lim=20;render()"></div>`;
+  let h=topo('Ranking de clientes',true)+'<main>'+filtrosHtml({rede:nivel==='loja',extra});
+  h+=`<div class="abas"><button class="${S.abaRk==='melhores'?'on':''}" onclick="S.abaRk='melhores';S.lim=20;render()">Melhores</button><button class="${S.abaRk==='piores'?'on':''}" onclick="S.abaRk='piores';S.lim=20;render()">Piores</button><button class="${S.abaRk==='evol'?'on':''}" onclick="S.abaRk='evol';S.lim=20;render()">Evolução</button></div>`;
+  if(S.abaRk==='evol'){
+    const mi=S.ate; if(mi<1) return h+'<div class="card vazio">Escolha um mês com mês anterior disponível.</div></main>';
+    const a=agrupaClientes(mi,mi,nivel), b=agrupaClientes(mi-1,mi-1,nivel); const lst=[];
+    for(const k in a){ if(!b[k]) continue; if(a[k].fat<min||b[k].fat<min) continue; const pa=a[k].dt/a[k].fat*100, pb=b[k].dt/b[k].fat*100; lst.push({k:+k,pa,pb,d:pa-pb,fat:a[k].fat}); }
+    const pior=lst.filter(x=>x.d>0).sort((x,y)=>y.d-x.d), melhor=lst.filter(x=>x.d<0).sort((x,y)=>x.d-y.d);
+    const tab=(arr,tit)=>`<div class="card"><h2>${tit} <span class="tag">${arr.length}</span></h2>${arr.length?`<div class="rol" style="max-height:380px"><table><thead><tr><th>${nivel==='rede'?'Rede':'Loja'}</th><th>${ymLab(mi-1)}</th><th>${ymLab(mi)}</th><th>Variação</th></tr></thead><tbody>${arr.slice(0,S.lim).map(x=>{const n=nomeCli(x.k,nivel);return `<tr><td class="nome">${esc(n.n)}<small>${esc(n.s)}${n.s?' · ':''}venda ${Rk(x.fat)}</small></td><td>${P(x.pb)}</td><td>${pctTag(x.pa)}</td><td class="${x.d>0?'down':'up'}">${x.d>0?'▲':'▼'} ${nf1.format(Math.abs(x.d))} p.p.</td></tr>`}).join('')}</tbody></table></div>`:'<div class="vazio">Nenhum.</div>'}</div>`;
+    return h+`<p class="nota" style="margin:-4px 2px 10px">Compara o % de trocas + devoluções de ${ymLab(mi,true)} com ${ymLab(mi-1,true)} (mês “Até” do filtro). Só clientes com venda acima do mínimo nos dois meses.</p>`+tab(pior,'Pioraram')+tab(melhor,'Melhoraram')+(Math.max(pior.length,melhor.length)>S.lim?`<button class="mais" onclick="S.lim+=20;render()">Mostrar mais</button>`:'')+'</main>';
+  }
+  const g=agrupaClientes(S.de,S.ate,nivel);
+  let lst=Object.entries(g).filter(([k,o])=>o.fat>=min&&o.fat>0).map(([k,o])=>({k:+k,...o,p:o.dt/o.fat*100}));
+  if(S.abaRk==='melhores') lst.sort((a,b)=>a.p-b.p||b.fat-a.fat); else lst.sort((a,b)=>b.p-a.p||b.dt-a.dt);
+  const acima=lst.filter(x=>x.p>LIMITE).length;
+  h+=`<div class="kpis"><div class="kpi"><div class="rot">${nivel==='rede'?'Redes':'Lojas'} no ranking</div><div class="val">${lst.length}</div><div class="det">venda ≥ R$ ${nf0.format(S.minRk)}</div></div>
+      <div class="kpi ${acima?'ruim':''}"><div class="rot">Acima de ${LIMITE}%</div><div class="val">${acima}</div><div class="det">${lst.length?P(acima/lst.length*100)+' do total':''}</div></div></div>`;
+  h+=`<p class="nota" style="margin:-4px 2px 10px">${S.abaRk==='melhores'?'Melhores = menor % de trocas + devoluções sobre a venda; empate decide pela maior venda.':'Piores = maior % de trocas + devoluções sobre a venda.'} Só entra quem vendeu pelo menos R$ ${nf0.format(S.minRk)} no período.</p>`;
+  h+=`<div class="card"><h2>${S.abaRk==='melhores'?'Menor % de trocas + devoluções':'Maior % de trocas + devoluções'}</h2>${lst.length?`<table><thead><tr><th>#</th><th style="text-align:left">${nivel==='rede'?'Rede':'Loja'}</th><th>Venda R$</th><th>DEV+TRC R$</th><th>%</th></tr></thead><tbody>
+   ${lst.slice(0,S.lim).map((x,i)=>{const n=nomeCli(x.k,nivel);return `<tr><td style="color:var(--sub);font-weight:800">${i+1}</td><td class="nome" style="text-align:left">${esc(n.n)}<small>${esc(n.s)}</small></td><td>${Rt(x.fat)}</td><td>${Rt(x.dt)}</td><td>${pctTag(x.p)}</td></tr>`}).join('')}</tbody></table>
+   ${lst.length>S.lim?`<button class="mais" onclick="S.lim+=20;render()">Mostrar mais</button>`:''}`:'<div class="vazio">Nenhum cliente com venda acima do mínimo.</div>'}</div>`;
+  return h+'</main>';
+}
+
+function telaProdutos(){
+  const extra=`<div class="full"><label>Venda mínima para entrar em Melhores e Piores (R$)</label><input type="number" inputmode="numeric" value="${S.minRk}" onchange="S.minRk=Math.max(0,+this.value||0);S.lim=20;render()"></div>`;
+  let h=topo('Produtos',true)+'<main>'+filtrosHtml({rede:true,loja:true,extra});
+  const {tot,porP,porL}=agregaDetalhe(); const nL=Object.keys(porL).length;
+  h+=cabecalhoEscopo(nL)+cardsTotais(tot);
+  h+=`<div class="abas"><button class="${S.abaPr==='todos'?'on':''}" onclick="S.abaPr='todos';S.lim=20;render()">Todos</button><button class="${S.abaPr==='melhores'?'on':''}" onclick="S.abaPr='melhores';S.lim=20;render()">Melhores</button><button class="${S.abaPr==='piores'?'on':''}" onclick="S.abaPr='piores';S.lim=20;render()">Piores</button></div>`;
+  let lst=Object.entries(porP).map(([p,o])=>({p,...o,pc:o.fat?o.dt/o.fat*100:Infinity}));
+  let nota;
+  if(S.abaPr==='todos'){ lst.sort((a,b)=>b.fat-a.fat); nota='Todos os produtos, do mais vendido para o menos vendido.'; }
+  else if(S.abaPr==='melhores'){ lst=lst.filter(x=>x.fat>=S.minRk*100).sort((a,b)=>a.pc-b.pc||b.fat-a.fat); nota=`Melhores = menor % de trocas + devoluções sobre a venda (empate: maior venda). Só produtos com venda ≥ R$ ${nf0.format(S.minRk)}.`; }
+  else { lst=lst.filter(x=>x.fat>=S.minRk*100||(x.fat<=0&&x.dt>0)).sort((a,b)=>b.pc-a.pc||b.dt-a.dt); nota=`Piores = maior % de trocas + devoluções sobre a venda. Só produtos com venda ≥ R$ ${nf0.format(S.minRk)}.`; }
+  h+=`<p class="nota" style="margin:-4px 2px 10px">${nota}</p>`;
+  h+=`<div class="card">${lst.length?`<div class="rol" style="max-height:560px">${tabProdutos(S.abaPr==='todos'?lst:lst.slice(0,S.lim),S.abaPr!=='todos')}</div>
+    ${S.abaPr!=='todos'&&lst.length>S.lim?`<button class="mais" onclick="S.lim+=20;render()">Mostrar mais</button>`:''}`:'<div class="vazio">Sem produtos no período.</div>'}</div>`;
+  if(S.loja<0){
+    const ls=Object.entries(porL).sort((a,b)=>b[1].dt-a[1].dt);
+    h+=`<div class="card"><h2>Loja a loja <span class="tag">${ls.length}</span></h2>${ls.length?`<div class="rol" style="max-height:420px">${tabLojas(ls.slice(0,S.limL||30),true)}</div>
+      ${ls.length>(S.limL||30)?`<button class="mais" onclick="S.limL=(S.limL||30)+30;render()">Mostrar mais lojas</button>`:''}<p class="nota">Ordenado pelo maior valor de trocas + devoluções. Toque numa loja para ver os produtos dela.</p>`:'<div class="vazio">Sem movimento.</div>'}</div>`;
+  }
+  return h+'</main>';
+}
+
+// ---------- início ----------
+(async()=>{
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
+  try{
+    SB=supabase.createClient(CFG.url,CFG.chave,{auth:{persistSession:true,autoRefreshToken:true}});
+    const {data}=await SB.auth.getSession();
+    U=usuarioDaSessao(data.session);
+    if(U) await abrir(); else render();
+  }catch(e){ console.error(e); document.getElementById('app').innerHTML='<div class="carregando">Não foi possível iniciar o app. Verifique a internet.</div>'; }
+})();
+</script>
+</body>
+</html>
