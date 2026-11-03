@@ -134,7 +134,7 @@ const LIMITE=3; // % troca+devolução sobre venda
 const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 let M=null, DET={}, carregou2025=true, SB=null;
 let U=null; // usuário
-const S={de:null,ate:null,vend:-1,rede:-1,loja:-1,busca:'',ordCli:'trc',abaRk:'piores',nivelRk:'loja',minRk:1000,abaPr:'todos',lim:20,limL:30};
+const S={de:null,ate:null,vend:-1,rede:-1,loja:-1,busca:'',ordCli:'pct',abaRk:'piores',nivelRk:'loja',minRk:1000,abaPr:'todos',lim:20,limL:30};
 const charts=[];
 
 // ---------- formatação ----------
@@ -413,6 +413,14 @@ function grafVendas(){
       scales:{y:{beginAtZero:true,grace:'10%',ticks:{callback:v=>nf1.format(v)+'%',maxTicksLimit:6},grid:{color:'#EEE9DD'}},x:{grid:{display:false}}}}}));
 }
 
+// ordena pelo % de DEV+TRC (pior primeiro). Quem vendeu menos que o mínimo vai para o fim, para não distorcer.
+function ordemPct(lst,fat,dt){
+  const min=S.minRk*100, pc=x=>fat(x)>0?dt(x)/fat(x):(dt(x)>0?Infinity:0);
+  return lst.sort((a,b)=>{const ga=fat(a)>=min?0:1, gb=fat(b)>=min?0:1; if(ga!==gb) return ga-gb; return pc(b)-pc(a)||dt(b)-dt(a);});
+}
+const abasOrdem=()=>`<div class="abas peq"><button class="${S.ordCli==='pct'?'on':''}" onclick="S.ordCli='pct';render()">Maior %</button><button class="${S.ordCli==='fat'?'on':''}" onclick="S.ordCli='fat';render()">Mais vendidos</button></div>`;
+const notaOrdem=()=>S.ordCli==='pct'?`Ordenado pelo maior % de trocas + devoluções sobre a venda. Quem vendeu menos de R$ ${nf0.format(S.minRk)} fica no fim da lista.`:'Ordenado pela maior venda.';
+
 // tabelas reutilizáveis
 function tabProdutos(lst,mostrarRank){
   return `<table><thead><tr>${mostrarRank?'<th>#</th>':''}<th class="l">Produto</th><th>Venda<br>R$ · un.</th><th>DEV+TRC<br>R$ · un.</th><th>%</th></tr></thead><tbody>
@@ -449,14 +457,16 @@ function telaClientes(){
   const {tot,porP,porL}=agregaDetalhe(); const nL=Object.keys(porL).length;
   h+=cabecalhoEscopo(nL)+cardsTotais(tot);
   if(S.loja<0){
-    const ls=Object.entries(porL).sort((a,b)=>b[1].fat-a[1].fat);
-    h+=`<div class="card"><h2>Lojas ${S.rede>=0?'da rede':''} <span class="tag">${ls.length}</span></h2>${ls.length?`<div class="rol" style="max-height:420px">${tabLojas(ls.slice(0,S.lim),true)}</div>
-      ${ls.length>S.lim?`<button class="mais" onclick="S.lim+=30;render()">Mostrar mais lojas</button>`:''}<p class="nota">Ordenado pela venda. Toque numa loja para ver só ela.</p>`:'<div class="vazio">Sem movimento no período.</div>'}</div>`;
+    let ls=Object.entries(porL);
+    ls=S.ordCli==='pct'?ordemPct(ls,x=>x[1].fat,x=>x[1].dt):ls.sort((a,b)=>b[1].fat-a[1].fat);
+    h+=`<div class="card"><h2>Lojas ${S.rede>=0?'da rede':''} <span class="tag">${ls.length}</span></h2>${abasOrdem()}${ls.length?`<div class="rol" style="max-height:420px">${tabLojas(ls.slice(0,S.lim),true)}</div>
+      ${ls.length>S.lim?`<button class="mais" onclick="S.lim+=30;render()">Mostrar mais lojas</button>`:''}<p class="nota">${notaOrdem()} Toque numa loja para ver só ela.</p>`:'<div class="vazio">Sem movimento no período.</div>'}</div>`;
   }
-  const ps=Object.entries(porP).map(([p,o])=>({p,...o})).sort((a,b)=>S.ordCli==='trc'?b.dt-a.dt:b.fat-a.fat);
+  let ps=Object.entries(porP).map(([p,o])=>({p,...o}));
+  ps=S.ordCli==='pct'?ordemPct(ps,x=>x.fat,x=>x.dt):ps.sort((a,b)=>b.fat-a.fat);
   h+=`<div class="card"><h2>Produto a produto</h2>
-    <div class="abas peq"><button class="${S.ordCli==='trc'?'on':''}" onclick="S.ordCli='trc';render()">Mais trocados</button><button class="${S.ordCli==='fat'?'on':''}" onclick="S.ordCli='fat';render()">Mais vendidos</button></div>
-    ${ps.length?`<div class="rol">${tabProdutos(ps,false)}</div>`:'<div class="vazio">Sem movimento no período.</div>'}</div>`;
+    ${abasOrdem()}
+    ${ps.length?`<div class="rol">${tabProdutos(ps,false)}</div><p class="nota">${notaOrdem()}</p>`:'<div class="vazio">Sem movimento no período.</div>'}</div>`;
   return h+'</main>';
 }
 
@@ -508,9 +518,9 @@ function telaProdutos(){
   h+=`<div class="card">${lst.length?`<div class="rol" style="max-height:560px">${tabProdutos(S.abaPr==='todos'?lst:lst.slice(0,S.lim),S.abaPr!=='todos')}</div>
     ${S.abaPr!=='todos'&&lst.length>S.lim?`<button class="mais" onclick="S.lim+=20;render()">Mostrar mais</button>`:''}`:'<div class="vazio">Sem produtos no período.</div>'}</div>`;
   if(S.loja<0){
-    const ls=Object.entries(porL).sort((a,b)=>b[1].dt-a[1].dt);
+    const ls=ordemPct(Object.entries(porL),x=>x[1].fat,x=>x[1].dt);
     h+=`<div class="card"><h2>Loja a loja <span class="tag">${ls.length}</span></h2>${ls.length?`<div class="rol" style="max-height:420px">${tabLojas(ls.slice(0,S.limL||30),true)}</div>
-      ${ls.length>(S.limL||30)?`<button class="mais" onclick="S.limL=(S.limL||30)+30;render()">Mostrar mais lojas</button>`:''}<p class="nota">Ordenado pelo maior valor de trocas + devoluções. Toque numa loja para ver os produtos dela.</p>`:'<div class="vazio">Sem movimento.</div>'}</div>`;
+      ${ls.length>(S.limL||30)?`<button class="mais" onclick="S.limL=(S.limL||30)+30;render()">Mostrar mais lojas</button>`:''}<p class="nota">Ordenado pelo maior % de trocas + devoluções sobre a venda (lojas que venderam menos de R$ ${nf0.format(S.minRk)} ficam no fim). Toque numa loja para ver os produtos dela.</p>`:'<div class="vazio">Sem movimento.</div>'}</div>`;
   }
   return h+'</main>';
 }
