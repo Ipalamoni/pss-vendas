@@ -214,9 +214,15 @@ const semAcento=s=>String(s).normalize('NFKD').replace(/[̀-ͯ]/g,'').toUpperCas
 function slugLogin(t){return String(t).normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'.').replace(/^\.+|\.+$/g,'');}
 function usuarioDaSessao(sess){
   const m=(sess&&sess.user&&sess.user.app_metadata)||{};
-  if(m.perfil!=='dir'&&m.perfil!=='vend') return null;
-  return {nome:m.nome||'Usuário',perfil:m.perfil,colab:m.colab||'',arquivo:m.arquivo||''};
+  if(m.perfil!=='dir'&&m.perfil!=='vend'&&m.perfil!=='ger') return null;
+  return {nome:m.nome||'Usuário',perfil:m.perfil,colab:m.colab||'',arquivo:m.arquivo||'',regiao:m.regiao||''};
 }
+// perfis: dir = diretoria (tudo + Produção); ger = gestor (todos os vendedores de uma região, sem custo/impostos/margem); vend = vendedor (só os próprios)
+const verTodos=()=>U.perfil!=='vend';            // vê todos os vendedores (filtro de vendedor)
+const verFin=()=>U.perfil==='dir';               // vê impostos, custo, receita líquida, margem, bonificação
+const verProd=()=>U.perfil==='dir';              // card Produção (só diretoria: Ithalo, Leonardo, Eduardo)
+const UF_NOME={MG:'Minas Gerais',SP:'São Paulo',GO:'Goiás',RJ:'Rio de Janeiro'};
+function regiaoTxt(){ const r=(U&&U.regiao)||''; if(!r) return 'Empresa toda'; return r[0]==='-'?'Fora de '+(UF_NOME[r.slice(1)]||r.slice(1)):(UF_NOME[r]||r); }
 async function gunzipJson(blob){
   if('DecompressionStream' in window){
     const st=blob.stream().pipeThrough(new DecompressionStream('gzip'));
@@ -226,7 +232,7 @@ async function gunzipJson(blob){
   return JSON.parse(pako.ungzip(new Uint8Array(await blob.arrayBuffer()),{to:'string'}));
 }
 async function carregarDados(){
-  const caminho=U.perfil==='dir'?'dir/dados.json.gz':'vend/'+U.arquivo+'.json.gz';
+  const caminho=U.perfil==='dir'?'dir/dados.json.gz':U.perfil==='ger'?'ger/'+U.arquivo+'.json.gz':'vend/'+U.arquivo+'.json.gz';
   const {data,error}=await SB.storage.from('dados').download(caminho+'?t='+Date.now());
   if(error) throw new Error('download: '+(error.message||error));
   const j=await gunzipJson(data);
@@ -305,7 +311,7 @@ function diasUteis(mi){ // dias com faturamento na empresa no mês
 // vendedor de cada loja (ou rede) no período: quem mais movimentou; +N quando há outros
 let cacheVd={k:null};
 function vendDe(k,nivel){
-  if(U.perfil!=='dir') return null;
+  if(!verTodos()) return null;
   const vf=escopoVend(), ck=S.de+'|'+S.ate+'|'+vf;
   if(cacheVd.k!==ck){
     const mapa=(de,ate)=>{ const L={}, Rd={}; cada(de,ate,(mi,c,p,fat,qv,dev,qd,trc,qt,v)=>{ const x=fat+dev+trc;
@@ -349,7 +355,7 @@ window.addEventListener('popstate',e=>{
   if(pagina()!==telaAtual) entrouTela(pagina());
 });
 window.addEventListener('hashchange',()=>{ if(U&&M&&pagina()!==telaAtual) entrouTela(pagina()); });
-function pagina(){ const h=location.hash.replace('#',''); if(h==='producao'||h==='grupos') return U&&U.perfil==='dir'?h:'inicio'; return ['vendas','clientes','ranking','produtos','prodloja'].includes(h)?h:'inicio'; }
+function pagina(){ const h=location.hash.replace('#',''); if(h==='producao') return U&&M&&verProd()?h:'inicio'; if(h==='grupos') return U&&verTodos()?h:'inicio'; return ['vendas','clientes','ranking','produtos','prodloja'].includes(h)?h:'inicio'; }
 // aberturas
 function abrirLoja(c){ abrirDetalhe(pagina(),{rede:M.cr[c],loja:c,busca:''}); }
 function abrirLojaCli(c){ abrirDetalhe('clientes',{rede:M.cr[c],loja:c,busca:''}); }
@@ -360,7 +366,7 @@ function topo(t,voltarBtn){
   const ini=U.nome.split(' ').map(s=>s[0]).slice(0,2).join('');
   return `<div class="topo">${voltarBtn?`<button class="btn-voltar" aria-label="Voltar" onclick="voltar()">‹</button>`:''}<h1>${t}</h1><button class="chip-user" onclick="abrirOv()">${esc(ini)} ▾</button></div>`;
 }
-function abrirOv(){ document.getElementById('ovNome').textContent=U.nome; document.getElementById('ovPerfil').textContent=U.perfil==='dir'?'Diretoria — vê todos os vendedores':'Vendedor — vê só os próprios dados'; document.getElementById('ov').classList.add('on'); }
+function abrirOv(){ document.getElementById('ovNome').textContent=U.nome; document.getElementById('ovPerfil').textContent=U.perfil==='dir'?'Diretoria — vê todos os vendedores':U.perfil==='ger'?'Gestor — '+regiaoTxt()+', todos os vendedores':'Vendedor — vê só os próprios dados'; document.getElementById('ov').classList.add('on'); }
 function fecharOv(){ document.getElementById('ov').classList.remove('on'); }
 async function sair(){ fecharOv(); try{await SB.auth.signOut()}catch(e){} U=null; M=null; DET={}; PD=null; PILHA=[]; telaAtual=null; history.replaceState(null,'',location.pathname); render(); }
 
@@ -408,7 +414,7 @@ function txtProdutos(curto){
 function resumoFiltros(opts){
   const p=[periodoTxt()]; const vf=escopoVend();
   if(opts.sem&&S.sem>=0) p.push('semana '+dm(S.sem));
-  if(U.perfil==='dir'&&vf>=0) p.push(nomeCurto(vf));
+  if(verTodos()&&vf>=0) p.push(nomeCurto(vf));
   if(opts.rede){ if(opts.loja&&S.loja>=0) p.push(M.cli[S.loja][0]); else if(S.rede>=0) p.push(titulo(M.rede[S.rede])); }
   if(opts.local){ if(S.cidade) p.push(titulo(S.cidade)+(S.uf?'/'+S.uf:'')); else if(S.uf) p.push(S.uf); }
   if(opts.produto){ const t=txtProdutos(true); if(t) p.push(t); }
@@ -421,12 +427,13 @@ const ordGrupo=(a,b)=>(a==='Outros')-(b==='Outros')||a.localeCompare(b,'pt');
 function filtrosHtml(opts={}){
   OPTS_TELA=opts;
   const o=opcoes(opts);
+  const _dirFiltro=verTodos();
   const ops=M.ym.map((y,i)=>`<option value="${i}">${ymLab(i,true)}</option>`).reverse().join('');
   let h=`<div class="filtros">
     <div><label>De</label><select id="fDe" onchange="setPer('de',this.value)">${ops}</select></div>
     <div><label>Até</label><select id="fAte" onchange="setPer('ate',this.value)">${ops}</select></div>`;
   h+=opts.extraTopo||'';
-  if(U.perfil==='dir'){
+  if(_dirFiltro){
     const tem=i=>o.vend.has(i)||i===S.vend;
     const vend=VENDEDORES.map(v=>M.vi[v[1]]).filter(i=>i!==undefined&&tem(i));
     const todosV=new Set(VENDEDORES.map(v=>M.vi[v[1]]));
@@ -523,7 +530,7 @@ function limparCharts(){ while(charts.length) charts.pop().destroy(); }
 function periodoTxt(){ return ymLab(S.de,true)+(S.de!==S.ate?' a '+ymLab(S.ate,true):''); }
 function escopoTxt(){
   const p=[]; const vf=escopoVend();
-  if(U.perfil==='dir') p.push(vf>=0?nomeVend(vf):'Empresa toda');
+  if(verTodos()) p.push(vf>=0?nomeVend(vf):regiaoTxt());
   p.push(S.loja>=0?M.cli[S.loja][0]:S.rede>=0?titulo(M.rede[S.rede]):'Todas as redes');
   return p.join(' · ');
 }
@@ -595,10 +602,10 @@ function telaInicio(){
   const du=diasUteis(mi), media=du?t.fat/du:0;
   const varF=ant.fat?(t.fat/ant.fat-1)*100:NaN, varP=t.pct-ant.pct;
   const vf=escopoVend();
-  const esc2=U.perfil==='dir'?(vf>=0?'Vendedor: '+nomeVend(vf):'Visão: empresa toda'):'Seus clientes';
+  const esc2=verTodos()?(vf>=0?'Vendedor: '+nomeVend(vf):'Visão: '+(U.regiao?regiaoTxt():'empresa toda')):'Seus clientes';
   const atual=new Date(M.atualizado+'T12:00:00').toLocaleDateString('pt-BR');
   const btn=(id,txt,svg,cls)=>`<button ${cls?`class="${cls}"`:''} onclick="ir('${id}')"><div class="ic"><svg viewBox="0 0 24 24">${svg}</svg></div>${txt}</button>`;
-  const dir=U.perfil==='dir';
+  const dir=verProd();
   return topo('PSS Vendas',false)+`<main>
    ${marcas()}
    <p class="ola">Olá, ${esc(U.nome.split(' ')[0])}!</p>
@@ -641,7 +648,7 @@ function telaVendas(){
      {t:'Venda R$',s:x=>x.fat,h:x=>Rt(x.fat)},
      {t:'DEV+TRC R$',s:x=>x.dt,h:x=>Rt(x.dt)},
      {t:'%',s:x=>isFinite(x.pct)?x.pct:null,h:x=>pctTag(x.pct)}],meses,{def:{c:0,d:-1}})}</div><p class="nota">${notaToque}</p></div>`;
-  if(U.perfil==='dir'){
+  if(verFin()){
     h+=`<div class="card"><h2>Resultado <span class="tag">só diretoria</span></h2><table><tbody>
       <tr><td class="l">Faturamento</td><td>${R(t.fat)}</td></tr>
       <tr><td class="l">(−) Trocas + devoluções</td><td>${R(t.dt)}</td></tr>
@@ -746,7 +753,7 @@ function cabecalhoEscopo(nLojas){
   const tp=txtProdutos(true);
   const vd=l?vendTxt(S.loja,'loja'):'';
   return `<div class="card cab-cli"><div style="font-weight:800;font-size:17px">${esc((l?l[0]:S.rede>=0?titulo(M.rede[S.rede])+' – todas as lojas':'Todas as redes')+loc)}</div>
-    <div class="nota">${l?esc(titulo(l[2]))+' · '+esc(titulo(l[4]))+' · cód. '+l[3]:nLojas+' lojas com movimento'} · ${periodoTxt()}${U.perfil==='dir'&&escopoVend()>=0?' · '+esc(nomeVend(escopoVend())):''}${vd&&escopoVend()<0?' · '+esc(vd):''}${tp?' · <b>'+esc(tp)+'</b>':''}</div></div>`;
+    <div class="nota">${l?esc(titulo(l[2]))+' · '+esc(titulo(l[4]))+' · cód. '+l[3]:nLojas+' lojas com movimento'} · ${periodoTxt()}${verTodos()&&escopoVend()>=0?' · '+esc(nomeVend(escopoVend())):''}${vd&&escopoVend()<0?' · '+esc(vd):''}${tp?' · <b>'+esc(tp)+'</b>':''}</div></div>`;
 }
 function cardsTotais(tot){
   return `<div class="kpis">
@@ -824,7 +831,7 @@ function telaProdutos(){
     const lst=Object.values(pg).sort((a,b)=>b.fat-a.fat);
     const cols=[{t:'Grupo',txt:1,cls:'nome l',s:x=>x.g,h:x=>`${esc(x.g)}<small>${x.n} produto${x.n>1?'s':''}</small>`},colVenda,colDT,colPct()];
     h+=`<div class="card">${lst.length?`<div class="rol" style="max-height:560px">${tab('pGrp',cols,lst,{def:{c:1,d:-1},tr:x=>`onclick="setGrupos(['${esc(x.g).replace(/'/g,"\\'")}'])" class="click"`})}</div><p class="nota">Venda por grupo de produto. Toque num grupo para filtrar só ele. ${notaToque}</p>`:'<div class="vazio">Sem produtos no período.</div>'}
-      ${U.perfil==='dir'?`<button class="mais" onclick="ir('grupos')">Conferir como os produtos foram agrupados</button>`:''}</div>`;
+      ${verTodos()?`<button class="mais" onclick="ir('grupos')">Conferir como os produtos foram agrupados</button>`:''}</div>`;
   } else {
     let lst=Object.entries(porP).map(([p,o])=>({p:+p,...o,pc:o.fat?o.dt/o.fat*100:Infinity}));
     let nota;
@@ -934,7 +941,7 @@ function telaProducao(){
   const tituloMedia=!PD?'Média por mês':porSem?'Média por semana':'Média por dia';
   const detMedia=!PD?`${base.length} ${base.length===1?'mês':'meses'} com produção`:porSem?(compl.length?`${compl.length} semana${compl.length>1?'s':''} completa${compl.length>1?'s':''}`:`${comMov.length} semana${comMov.length>1?'s':''} (parciais)`):`${comMov.length} dia${comMov.length>1?'s':''} com produção`;
   h+=`<div class="card cab-cli"><div style="font-weight:800;font-size:17px">${esc(txtProdutos(false))}</div>
-    <div class="nota">${U.perfil==='dir'&&escopoVend()>=0?esc(nomeVend(escopoVend())):'Empresa toda'} · ${periodoTxt()}${S.sem>=0?' · semana '+esc(semanas.find(x=>x.w===S.sem).lab):''}</div></div>`;
+    <div class="nota">${verTodos()&&escopoVend()>=0?esc(nomeVend(escopoVend())):regiaoTxt()} · ${periodoTxt()}${S.sem>=0?' · semana '+esc(semanas.find(x=>x.w===S.sem).lab):''}</div></div>`;
   h+=`<div class="kpis">
     <div class="kpi wide"><div class="rot">${usaCx?'Caixas produzidas':'Pacotes produzidos'}</div><div class="val">${fmtV(usaCx?t.cx:q)}</div><div class="det">${Q(q)} pacotes${t.paes?' · '+Q(t.paes)+' pães':''}</div></div>
     <div class="kpi lar"><div class="rot">${tituloMedia}</div><div class="val">${fmtV(media)}</div><div class="det">${un} · ${detMedia}</div></div>
