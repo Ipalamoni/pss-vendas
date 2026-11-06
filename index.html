@@ -17,6 +17,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
+<script src="grupos.js"></script>
 <style>
 :root{
   --laranja:#FD9B02; --laranja-esc:#C97A00; --laranja-claro:#FFF3DC;
@@ -67,12 +68,22 @@ main{max-width:760px;margin:0 auto;padding:14px 14px 40px}
 .limpar{grid-column:1 / -1;height:40px;border:1.5px solid var(--linha);background:#fff;color:var(--sub);border-radius:12px;font-weight:800;cursor:pointer}
 .filtros label{font-size:12.5px;color:var(--sub);font-weight:700;display:block;margin-bottom:3px}
 .filtros .full{grid-column:1 / -1}
-select,input[type=text],input[type=number],input[type=password]{width:100%;height:46px;border:1.5px solid var(--linha);border-radius:12px;padding:0 10px;background:#fff;color:var(--texto)}
+select,input[type=text],input[type=number],input[type=password],input[type=search]{width:100%;height:46px;border:1.5px solid var(--linha);border-radius:12px;padding:0 10px;background:#fff;color:var(--texto)}
 select:focus,input:focus{outline:2px solid var(--laranja);border-color:var(--laranja)}
+.msbtn{width:100%;min-height:46px;border:1.5px solid var(--linha);border-radius:12px;padding:6px 34px 6px 10px;background:#fff;color:var(--texto);text-align:left;cursor:pointer;position:relative;line-height:1.25}
+.msbtn:after{content:"";position:absolute;right:14px;top:50%;width:8px;height:8px;border-right:2px solid var(--sub);border-bottom:2px solid var(--sub);transform:translateY(-70%) rotate(45deg)}
+.msbtn b{color:var(--verde-esc)}
+.selchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.selchips span{background:var(--verde-claro);color:var(--verde-esc);border-radius:10px;padding:4px 4px 4px 9px;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:4px;max-width:100%}
+.selchips span em{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.selchips button{border:0;background:#fff;color:var(--verde);border-radius:8px;width:24px;height:24px;font-weight:800;cursor:pointer;flex:0 0 24px;padding:0;font-size:14px}
 .abas{display:flex;gap:6px;background:#ECE7DA;padding:4px;border-radius:14px;margin-bottom:12px}
 .abas button{flex:1;border:0;background:transparent;height:44px;border-radius:11px;font-weight:800;color:var(--sub);cursor:pointer;font-size:15px}
 .abas button.on{background:#fff;color:var(--verde-esc);box-shadow:0 1px 3px rgba(0,0,0,.1)}
 .abas.peq button{height:38px;font-size:14px}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:0 0 12px;padding-bottom:2px}
+.chips button{flex:0 0 auto;border:1.5px solid var(--verde);background:#fff;color:var(--verde);border-radius:20px;height:36px;padding:0 13px;font-weight:800;font-size:13.5px;cursor:pointer}
+.chips button.on{background:var(--verde);color:#fff}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{font-size:11.5px;line-height:1.2;color:var(--verde-esc);text-align:center;font-weight:800;padding:8px 3px 5px;background:#E6EAE7;border-bottom:2px solid #C9D3CD;position:sticky;top:0;z-index:1;vertical-align:middle}
 th:first-child{border-top-left-radius:10px}th:last-child{border-top-right-radius:10px}
@@ -82,11 +93,14 @@ table.ord th:active{background:#D9E0DC}
 th i{display:block;font-style:normal;font-size:9.5px;line-height:1;margin-top:2px;color:#A3B0AA}
 th.on{background:#D6E4DD;color:var(--verde)}th.on i{color:var(--laranja);font-size:11px}
 table.pl td{font-size:12px;padding:9px 2px}table.pl th{font-size:10.5px;padding:7px 1px 4px}table.pl td.nome{max-width:29vw;font-size:12.5px}table.pl td.nome small{font-size:11px}table.pl .pct{padding:2px 4px}
+tfoot td{font-weight:800;background:#F1F5F2;border-top:2px solid #C9D3CD;border-bottom:0;position:sticky;bottom:0}
 .menu button.largo{grid-column:1 / -1;min-height:84px;flex-direction:row;gap:12px}
 td{padding:9px 4px;border-bottom:1px solid var(--linha);text-align:right;vertical-align:top;white-space:nowrap}
 td.nome{white-space:normal}
 td.nome{font-weight:700;max-width:46vw;white-space:normal}
 td.nome small{display:block;font-weight:400;color:var(--sub);font-size:12px}
+td.nome small.vd{color:#7a8a83;font-size:11.5px}
+tr.click{cursor:pointer}tr.click:active td{background:#F3EFE4}
 .rol{max-height:460px;overflow:auto;margin:0 -4px;padding:0 4px}
 .pct{font-weight:800;border-radius:8px;padding:2px 6px;display:inline-block}
 .pct.r{background:var(--ruim-claro);color:var(--ruim)}
@@ -99,6 +113,7 @@ td.nome small{display:block;font-weight:400;color:var(--sub);font-size:12px}
 td.l{text-align:left}
 td small.u{display:block;font-weight:400;color:var(--sub);font-size:11.5px}
 .vazio{text-align:center;color:var(--sub);padding:26px 8px}
+.aviso{background:var(--laranja-claro);color:#6b4100;border-radius:12px;padding:10px 12px;font-size:13px;margin:0 0 12px}
 .carregando{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:16px;color:var(--sub)}
 .spin{width:42px;height:42px;border:5px solid var(--verde-claro);border-top-color:var(--verde);border-radius:50%;animation:g 1s linear infinite}
 @keyframes g{to{transform:rotate(360deg)}}
@@ -111,13 +126,9 @@ td small.u{display:block;font-weight:400;color:var(--sub);font-size:11.5px}
 .btn-entrar:disabled{opacity:.6}
 .erro{color:var(--ruim);font-weight:700;font-size:14px;min-height:20px;text-align:center}
 .login h2{font-size:15px;color:var(--sub);margin:22px 0 10px;text-align:left;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
-.lista-user{display:grid;gap:8px}
-.lista-user button{height:54px;border:0;border-radius:14px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08);font-weight:800;font-size:16px;color:var(--texto);text-align:left;padding:0 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
-.lista-user button span{font-size:12px;font-weight:700;color:var(--verde);background:var(--verde-claro);border-radius:8px;padding:3px 8px}
 .logo-home{display:block;width:62%;max-width:280px;margin:4px auto 4px}
 .marcas{display:flex;align-items:center;justify-content:center;gap:18px;margin:6px auto 8px;max-width:440px}
 .marcas .pss{width:56%;max-width:240px}
-.marcas .div{width:1.5px;align-self:stretch;background:var(--linha);margin:8px 0}
 .marcas .pal{width:30%;max-width:130px}
 .rodape{text-align:center;margin:26px 0 6px;color:var(--sub);font-size:11.5px;line-height:1.5}
 .rodape .por{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;font-weight:700;color:var(--verde-esc)}
@@ -125,45 +136,62 @@ td small.u{display:block;font-weight:400;color:var(--sub);font-size:11.5px}
 .rodape .por{white-space:nowrap}
 .ola{text-align:center;margin:0 0 4px;font-weight:800;font-size:18px}
 .escopo{text-align:center;color:var(--sub);font-size:14px;margin:0 0 14px}
-.barra-meta{height:10px;background:#EEE9DD;border-radius:6px;overflow:hidden;margin-top:6px}
-.barra-meta div{height:100%;background:var(--laranja)}
-.sair{position:fixed}
 .ov{display:none}
 .ov.on{display:flex;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;align-items:flex-end;justify-content:center}
 .ov .box{background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
-.ov .box button{width:100%;height:52px;border-radius:14px;border:0;font-weight:800;font-size:16px;margin-top:8px;cursor:pointer}
+.ov .box > button{width:100%;height:52px;border-radius:14px;border:0;font-weight:800;font-size:16px;margin-top:8px;cursor:pointer}
+.ms .tit{font-weight:800;font-size:17px;color:var(--verde-esc);display:flex;align-items:center;gap:8px}
+.ms .tit span{flex:1}
+.ms .tit small{font-size:13px;color:var(--sub);font-weight:700}
+.ms input[type=search]{margin-top:10px}
+.ms .acoes{display:flex;gap:8px;margin-top:8px}
+.ms .acoes button{flex:1;height:36px;border:1.5px solid var(--linha);background:#fff;border-radius:10px;font-weight:800;color:var(--sub);font-size:13.5px;cursor:pointer}
+.ms .lista{max-height:52vh;overflow:auto;margin:8px -4px 0;padding:0 4px;border-top:1px solid var(--linha)}
+.ms .lista label{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--linha);cursor:pointer}
+.ms .lista input{width:22px;height:22px;accent-color:var(--verde);flex:0 0 22px;margin:0}
+.ms .lista b{display:block;font-size:14.5px;font-weight:700}
+.ms .lista small{display:block;font-size:12px;color:var(--sub)}
+.ms .rodms{display:flex;gap:8px;margin-top:10px}
+.ms .rodms button{flex:1;height:50px;border-radius:14px;border:0;font-weight:800;font-size:16px;cursor:pointer}
+.grp h3{font-size:14.5px;margin:12px 0 6px;color:var(--verde-esc);display:flex;justify-content:space-between}
+.grp ul{margin:0;padding:0 0 0 2px;list-style:none;font-size:13px}
+.grp li{padding:4px 0;border-bottom:1px solid var(--linha)}
+.grp li small{color:var(--sub)}
 </style>
 </head>
 <body>
 <div id="app"><div class="carregando"><div class="spin"></div><div>Carregando dados…</div></div></div>
-<div class="ov" id="ov"><div class="box">
+<div class="ov" id="ov" onclick="if(event.target===this)fecharOv()"><div class="box">
   <div style="font-weight:800;font-size:17px" id="ovNome"></div>
   <div style="color:var(--sub);font-size:14px;margin-top:2px" id="ovPerfil"></div>
   <button style="background:var(--verde);color:#fff" onclick="sair()">Trocar de usuário</button>
   <button style="background:#EEE9DD;color:var(--texto)" onclick="fecharOv()">Fechar</button>
 </div></div>
+<div class="ov" id="ms" onclick="if(event.target===this)fecharMulti()"><div class="box ms" id="msBox"></div></div>
 <script>
 const LOGO_SRC='logo.png', LOGO_PAL='palamoni.png';
 const marcas=()=>`<div class="marcas"><img class="pss" src="${LOGO_SRC}" alt="Pães São Sebastião"><img class="pal" src="${LOGO_PAL}" alt="Palamoni Consultoria"></div>`;
 const rodape=()=>`<div class="rodape"><div class="por">Uma solução <img src="${LOGO_PAL}" alt="Palamoni Consultoria Empresarial"></div>© ${new Date().getFullYear()} Palamoni Consultoria Empresarial · uso licenciado à Pães São Sebastião</div>`;
 const DIRETORIA=['Ithalo Palamoni','Moisés','Leonardo Mijoler','Eduardo Mijoler'];
+// [nome completo, Nome do Colaborador na base, nome curto]
 const VENDEDORES=[
- ['Roni Willian de Souza','RONI WILLIAN DE SOUZA'],
- ['Luan Medeiros Molina','LUAN MEDEIROS MOLINA'],
- ['Cíntia Helena de Oliveira','CINTIA HELENA DE OLIVEIRA'],
- ['Claudinei Antônio de Almeida Filho','CLAUDINEI ANTONIO DE ALMEIDA FILHO'],
- ['Leandro Duarte','LEANDRO DUARTE (P)'],
- ['Henrique','HENRIQUE  (P)'],
- ['Jair Martins Júnior','JAIR MARTINS JUNIOR'],
- ['Kerlen','KERLEN (P)'],
- ['Leandro Molina','LEANDRO MOLINA (P)'],
- ['Rodrigo de Azevedo','RODRIGO DE AZEVEDO FAZZIO']
+ ['Roni Willian de Souza','RONI WILLIAN DE SOUZA','Roni'],
+ ['Luan Medeiros Molina','LUAN MEDEIROS MOLINA','Luan'],
+ ['Cíntia Helena de Oliveira','CINTIA HELENA DE OLIVEIRA','Cíntia'],
+ ['Claudinei Antônio de Almeida Filho','CLAUDINEI ANTONIO DE ALMEIDA FILHO','Claudinei'],
+ ['Leandro Duarte','LEANDRO DUARTE (P)','Leandro Duarte'],
+ ['Henrique','HENRIQUE  (P)','Henrique'],
+ ['Jair Martins Júnior','JAIR MARTINS JUNIOR','Jair'],
+ ['Kerlen','KERLEN (P)','Kerlen'],
+ ['Leandro Molina','LEANDRO MOLINA (P)','Leandro Molina'],
+ ['Rodrigo de Azevedo','RODRIGO DE AZEVEDO FAZZIO','Rodrigo']
 ];
 const LIMITE=3; // % troca+devolução sobre venda
 const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-let M=null, DET={}, carregou2025=true, SB=null;
+const DSEM=['seg','ter','qua','qui','sex','sáb','dom'];
+let M=null, DET={}, PD=null, PDMI=null, DIA0=Date.UTC(2025,0,1), carregou2025=true, SB=null;
 let U=null; // usuário
-const S={de:null,ate:null,vend:-1,rede:-1,loja:-1,busca:'',ordCli:'pct',abaRk:'piores',nivelRk:'loja',minRk:0,abaPr:'todos',lim:20,limL:30,fAberto:false,uf:'',cidade:'',prod:-1,ord:{}};
+const S={de:null,ate:null,vend:-1,rede:-1,loja:-1,busca:'',ordCli:'pct',abaRk:'piores',nivelRk:'loja',minRk:0,abaPr:'todos',lim:20,limL:30,fAberto:false,uf:'',cidade:'',prods:[],grupos:[],sem:-1,ord:{}};
 const charts=[];
 
 // ---------- formatação ----------
@@ -172,6 +200,7 @@ const nf1=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFraction
 const R=c=>'R$ '+nf0.format(Math.round(c/100));
 const Rk=c=>{const v=c/100;if(Math.abs(v)>=1e6)return 'R$ '+nf1.format(v/1e6)+' mi';if(Math.abs(v)>=1e4)return 'R$ '+nf0.format(v/1e3)+' mil';return 'R$ '+nf0.format(v)};
 const Q=n=>nf0.format(n);
+const Cx=x=>Math.abs(x)>=1000?nf0.format(x):nf1.format(x);
 const Rt=c=>{const v=c/100;if(Math.abs(v)>=1e6)return nf1.format(v/1e6)+' mi';if(Math.abs(v)>=1e4)return nf0.format(v/1e3)+' mil';return nf0.format(v)};
 const P=x=>isFinite(x)?nf1.format(x)+'%':'–';
 const pctTag=x=>`<span class="pct ${x>LIMITE?'r':'b'}">${P(x)}</span>`;
@@ -179,9 +208,10 @@ const pctCel=(fat,dt)=>fat>0?pctTag(dt/fat*100):(dt>0?'<span class="pct r">sem v
 const ymLab=(i,longo)=>{const y=M.ym[i];const a=Math.floor(y/100),m=y%100;return longo?MESES[m-1].replace(/^./,s=>s.toUpperCase())+'/'+a:MESES[m-1]+'/'+String(a).slice(2)};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const titulo=s=>s.toLowerCase().replace(/(^|\s|\(|\/|-)(\S)/g,(m,a,b)=>a+b.toUpperCase());
+const semAcento=s=>String(s).normalize('NFKD').replace(/[̀-ͯ]/g,'').toUpperCase();
 
 // ---------- dados ----------
-function slugLogin(t){return String(t).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'.').replace(/^\.+|\.+$/g,'');}
+function slugLogin(t){return String(t).normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'.').replace(/^\.+|\.+$/g,'');}
 function usuarioDaSessao(sess){
   const m=(sess&&sess.user&&sess.user.app_metadata)||{};
   if(m.perfil!=='dir'&&m.perfil!=='vend') return null;
@@ -201,10 +231,25 @@ async function carregarDados(){
   if(error) throw new Error('download: '+(error.message||error));
   const j=await gunzipJson(data);
   DET={todos:j.det.map(col=>Int32Array.from(col))}; delete j.det;
+  PD=null; PDMI=null;
+  if(j.pd&&j.pd.length===5&&j.pdBase){ PD=j.pd.map(col=>Int32Array.from(col)); delete j.pd; }
   M=j; M.vi={};M.vend.forEach((v,i)=>M.vi[v]=i);
   M.ri={};M.rede.forEach((r,i)=>M.ri[r]=i);
   M.cr=Int16Array.from(M.cli.map(c=>M.ri[c[1]]??-1));
-  S.de=S.ate=M.ym.length-1; S.vend=-1;S.rede=-1;S.loja=-1;S.busca='';S.uf='';S.cidade='';S.prod=-1;S.ord={}; cacheCli={k:null}; cacheMask={k:null}; cacheProd={k:null};
+  // grupos de produto e cadastro de embalagem (grupos.js)
+  const cad=window.CAD_PROD||{}, gp=window.grupoProduto||(()=>'Outros');
+  M.grp=M.prod.map(p=>gp(p[0],p[1]));
+  M.cx=Float64Array.from(M.prod.map(p=>{const c=cad[String(p[1]).trim()];return c?+c[3]||0:0}));
+  M.un=Float64Array.from(M.prod.map(p=>{const c=cad[String(p[1]).trim()];return c?+c[2]||0:0}));
+  M.cad=M.prod.map(p=>cad[String(p[1]).trim()]||null);
+  if(PD){
+    const [y,m,d]=M.pdBase.split('-').map(Number); DIA0=Date.UTC(y,m-1,d);
+    const ymi={}; M.ym.forEach((v,i)=>ymi[v]=i); const memo={}, dia=PD[0];
+    PDMI=new Int16Array(dia.length);
+    for(let i=0;i<dia.length;i++){ const o=dia[i]; let r=memo[o]; if(r===undefined){ const dt=new Date(DIA0+o*864e5); r=memo[o]=ymi[dt.getUTCFullYear()*100+dt.getUTCMonth()+1]??-1; } PDMI[i]=r; }
+  }
+  S.de=S.ate=M.ym.length-1; S.vend=-1;S.rede=-1;S.loja=-1;S.busca='';S.uf='';S.cidade='';S.prods=[];S.grupos=[];S.sem=-1;S.ord={};
+  cacheMask={k:null}; cacheOpc={k:null}; cacheVd={k:null}; cachePM={k:null};
   M.temUF=M.cli.some(c=>c[5]);
 }
 function precisa2025(){return false}
@@ -216,16 +261,27 @@ function mascaraLocal(){
   if(cacheMask.k!==k){ const m=new Uint8Array(M.cli.length); M.cli.forEach((c,i)=>{ if((!S.uf||c[5]===S.uf)&&(!S.cidade||c[4]===S.cidade)) m[i]=1; }); cacheMask={k,m}; }
   return cacheMask.m;
 }
+// produtos que passam no filtro de grupo e de produto (null = sem filtro). soGrupo: ignora a escolha de produtos
+let cachePM={k:null,m:null};
+function prodMask(soGrupo){
+  const usaP=!soGrupo&&S.prods.length;
+  if(!usaP&&!S.grupos.length) return null;
+  const k=(usaP?S.prods.join(','):'')+'|'+S.grupos.join('|')+'|'+(soGrupo?1:0);
+  if(cachePM.k!==k){ const m=new Uint8Array(M.prod.length);
+    if(usaP) S.prods.forEach(p=>m[p]=1); else { const g=new Set(S.grupos); M.grp.forEach((x,i)=>{ if(g.has(x)) m[i]=1; }); }
+    cachePM={k,m}; }
+  return cachePM.m;
+}
 function escopoVend(){ if(U.perfil==='vend') return M.vi[U.colab]; return S.vend; }
-// percorre linhas de detalhe no período/escopo; filtro opcional de rede e loja
+// percorre linhas de detalhe no período/escopo; filtros opcionais: rede, loja, local (UF/cidade), pm (máscara de produtos)
 function cada(de,ate,fn,o={}){
-  const vf=o.vend===undefined?escopoVend():o.vend, rf=o.rede??-1, lf=o.loja??-1, pf=o.prod??-1, cr=M.cr, mk=o.local?mascaraLocal():null;
+  const vf=o.vend===undefined?escopoVend():o.vend, rf=o.rede??-1, lf=o.loja??-1, pm=o.pm||null, cr=M.cr, mk=o.local?mascaraLocal():null;
   for(const d of Object.values(DET)){
     const [m,v,c,p,fat,qv,dev,qd,trc,qt]=d; const n=m.length;
     for(let i=0;i<n;i++){
       const mi=m[i]; if(mi<de||mi>ate) continue;
       if(vf>=0 && v[i]!==vf) continue;
-      if(pf>=0 && p[i]!==pf) continue;
+      if(pm && !pm[p[i]]) continue;
       const ci=c[i];
       if(lf>=0){ if(ci!==lf) continue; } else { if(rf>=0 && cr[ci]!==rf) continue; if(mk && !mk[ci]) continue; }
       fn(mi,ci,p[i],fat[i],qv[i],dev[i],qd[i],trc[i],qt[i],v[i]);
@@ -246,99 +302,218 @@ function diasUteis(mi){ // dias com faturamento na empresa no mês
   return (M.dias&&M.dias[String(M.ym[mi])])||0;
 }
 
-// ---------- navegação ----------
-function ir(p){ if(location.hash!=='#'+p) location.hash=p; else render(); window.scrollTo(0,0); }
-window.addEventListener('hashchange',()=>{S.lim=20;S.limL=30;S.ord={};S.fAberto=(pagina()==='prodloja'&&S.prod<0);render();window.scrollTo(0,0)});
-function pagina(){ const h=location.hash.replace('#',''); return ['vendas','clientes','ranking','produtos','prodloja'].includes(h)?h:'inicio'; }
+// vendedor de cada loja (ou rede) no período: quem mais movimentou; +N quando há outros
+let cacheVd={k:null};
+function vendDe(k,nivel){
+  if(U.perfil!=='dir') return null;
+  const vf=escopoVend(), ck=S.de+'|'+S.ate+'|'+vf;
+  if(cacheVd.k!==ck){
+    const mapa=(de,ate)=>{ const L={}, Rd={}; cada(de,ate,(mi,c,p,fat,qv,dev,qd,trc,qt,v)=>{ const x=fat+dev+trc;
+        const a=L[c]||(L[c]={}); a[v]=(a[v]||0)+x; const r=M.cr[c], b=Rd[r]||(Rd[r]={}); b[v]=(b[v]||0)+x; },{vend:vf}); return {L,Rd}; };
+    cacheVd={k:ck,per:mapa(S.de,S.ate),tudo:null};
+  }
+  let a=(nivel==='rede'?cacheVd.per.Rd:cacheVd.per.L)[k];
+  if(!a){ if(!cacheVd.tudo) cacheVd.tudo=(()=>{ const L={}, Rd={}; cada(0,M.ym.length-1,(mi,c,p,fat,qv,dev,qd,trc,qt,v)=>{ const x=fat+dev+trc; const a=L[c]||(L[c]={}); a[v]=(a[v]||0)+x; const r=M.cr[c], b=Rd[r]||(Rd[r]={}); b[v]=(b[v]||0)+x; },{vend:vf}); return {L,Rd}; })();
+    a=(nivel==='rede'?cacheVd.tudo.Rd:cacheVd.tudo.L)[k]; }
+  if(!a) return null;
+  const vs=Object.keys(a).map(Number).sort((x,y)=>a[y]-a[x]);
+  return {v:vs[0],n:vs.length};
+}
+function vendTxt(k,nivel){ const x=vendDe(k,nivel); return x?'Vendedor: '+nomeCurto(x.v)+(x.n>1?` +${x.n-1}`:''):''; }
+const vdHtml=(k,nivel)=>{ const t=vendTxt(k,nivel); return t?`<small class="vd">${esc(t)}</small>`:''; };
 
-function topo(t,voltar){
+// ---------- navegação (com "voltar" um passo por vez) ----------
+// Cada "abertura" (tocar numa loja, num produto…) guarda como os filtros estavam. O voltar desfaz uma abertura por vez;
+// sem abertura pendente, volta para o Início.
+let PILHA=[], telaAtual=null;
+const CAMPOS_S=['de','ate','vend','rede','loja','busca','uf','cidade','prods','grupos','sem','minRk','ordCli','abaRk','nivelRk','abaPr','lim','limL','ord','fAberto'];
+function snapS(){ const o={}; CAMPOS_S.forEach(k=>o[k]=S[k]); return {S:JSON.parse(JSON.stringify(o)),y:window.scrollY}; }
+function entrouTela(p){ telaAtual=p; S.lim=20;S.limL=30;S.ord={};S.fAberto=(p==='prodloja'&&!S.prods.length&&!S.grupos.length); render(); window.scrollTo(0,0); }
+function ir(p){ if(pagina()===p){ render(); return; } history.pushState({app:1,d:PILHA.length,nav:1},'','#'+p); entrouTela(p); }
+function abrirDetalhe(dest,mud){
+  PILHA.push(snapS()); Object.assign(S,mud);
+  history.pushState({app:1,d:PILHA.length,nav:1},'','#'+dest);
+  telaAtual=dest; S.lim=20;S.limL=30;S.ord={};S.fAberto=false; render(); window.scrollTo(0,0);
+}
+function voltar(){
+  const st=history.state;
+  if(st&&st.nav) history.back();
+  else { PILHA=[]; history.replaceState({app:1,d:0},'','#inicio'); entrouTela('inicio'); }
+}
+window.addEventListener('popstate',e=>{
+  if(!U||!M) return;
+  fecharMulti(); fecharOv();
+  const d=(e.state&&e.state.d)||0; let s=null;
+  while(PILHA.length>d) s=PILHA.pop();
+  if(s){ Object.assign(S,s.S); telaAtual=pagina(); render(); window.scrollTo(0,s.y||0); return; }
+  if(pagina()!==telaAtual) entrouTela(pagina());
+});
+window.addEventListener('hashchange',()=>{ if(U&&M&&pagina()!==telaAtual) entrouTela(pagina()); });
+function pagina(){ const h=location.hash.replace('#',''); if(h==='producao'||h==='grupos') return U&&U.perfil==='dir'?h:'inicio'; return ['vendas','clientes','ranking','produtos','prodloja'].includes(h)?h:'inicio'; }
+// aberturas
+function abrirLoja(c){ abrirDetalhe(pagina(),{rede:M.cr[c],loja:c,busca:''}); }
+function abrirLojaCli(c){ abrirDetalhe('clientes',{rede:M.cr[c],loja:c,busca:''}); }
+function abrirRedeCli(r){ abrirDetalhe('clientes',{rede:r,loja:-1,busca:'',cidade:'',uf:''}); }
+function abrirProd(p){ abrirDetalhe('prodloja',{prods:[p]}); }
+
+function topo(t,voltarBtn){
   const ini=U.nome.split(' ').map(s=>s[0]).slice(0,2).join('');
-  return `<div class="topo">${voltar?`<button class="btn-voltar" aria-label="Voltar" onclick="ir('inicio')">‹</button>`:''}<h1>${t}</h1><button class="chip-user" onclick="abrirOv()">${esc(ini)} ▾</button></div>`;
+  return `<div class="topo">${voltarBtn?`<button class="btn-voltar" aria-label="Voltar" onclick="voltar()">‹</button>`:''}<h1>${t}</h1><button class="chip-user" onclick="abrirOv()">${esc(ini)} ▾</button></div>`;
 }
 function abrirOv(){ document.getElementById('ovNome').textContent=U.nome; document.getElementById('ovPerfil').textContent=U.perfil==='dir'?'Diretoria — vê todos os vendedores':'Vendedor — vê só os próprios dados'; document.getElementById('ov').classList.add('on'); }
 function fecharOv(){ document.getElementById('ov').classList.remove('on'); }
-async function sair(){ fecharOv(); try{await SB.auth.signOut()}catch(e){} U=null; M=null; DET={}; location.hash=''; render(); }
+async function sair(){ fecharOv(); try{await SB.auth.signOut()}catch(e){} U=null; M=null; DET={}; PD=null; PILHA=[]; telaAtual=null; history.replaceState(null,'',location.pathname); render(); }
 
-// clientes (lojas) que o escopo (vendedor) atende
-let cacheCli={k:null,set:null};
-function cliSet(){
-  const vf=escopoVend(), k=vf+'|'+carregou2025;
-  if(cacheCli.k!==k){ const set=new Set(); cada(0,M.ym.length-1,(mi,c)=>set.add(c),{vend:vf}); cacheCli={k,set}; }
-  return cacheCli.set;
+// ---------- opções dos filtros: só o que tem dado com os outros filtros escolhidos ----------
+// Cada lista considera o período, o vendedor e os demais filtros da tela (menos ela mesma).
+let cacheOpc={k:null,o:null}, OPTS_TELA={};
+function opcoes(opts){
+  const rf=opts.rede?S.rede:-1, lf=opts.rede&&opts.loja?S.loja:-1, uf=opts.local?S.uf:'', cid=opts.local?S.cidade:'';
+  const gm=opts.produto?prodMask(true):null, pm=opts.produto&&S.prods.length?prodMask(false):null;
+  const vf=escopoVend();
+  const k=[S.de,S.ate,vf,rf,lf,uf,cid,opts.produto?S.prods.join(','):'',opts.produto?S.grupos.join('|'):''].join('§');
+  if(cacheOpc.k===k) return cacheOpc.o;
+  const o={vend:new Set(),rede:{},uf:new Set(),cid:new Set(),loja:new Set(),prod:new Set(),prodG:new Set()};
+  const cr=M.cr, cli=M.cli;
+  for(const d of Object.values(DET)){
+    const [m,v,c,p]=d; const n=m.length;
+    for(let i=0;i<n;i++){
+      const mi=m[i]; if(mi<S.de||mi>S.ate) continue;
+      const ci=c[i], pi=p[i], r=cr[ci], cl=cli[ci];
+      const okR=rf<0||r===rf, okL=lf<0||ci===lf, okU=!uf||cl[5]===uf, okC=!cid||cl[4]===cid, okG=!gm||gm[pi], okP=!pm||pm[pi];
+      const okLocal=okR&&okL&&okU&&okC;
+      if(okLocal&&okG&&okP) o.vend.add(v[i]);
+      if(vf>=0&&v[i]!==vf) continue;
+      if(okG&&okP){
+        if(okU&&okC) (o.rede[r]||(o.rede[r]=new Set())).add(ci);
+        if(okR) o.uf.add(cl[5]);
+        if(okR&&okU) o.cid.add(cl[4]);
+        if(okR&&okU&&okC) o.loja.add(ci);
+      }
+      if(okLocal){ o.prodG.add(pi); if(okG) o.prod.add(pi); }
+    }
+  }
+  cacheOpc={k,o}; return o;
 }
-// produtos que o escopo (vendedor) movimenta
-let cacheProd={k:null,set:null};
-function prodSet(){
-  const vf=escopoVend(), k=vf+'|'+carregou2025;
-  if(cacheProd.k!==k){ const set=new Set(); cada(0,M.ym.length-1,(mi,c,p)=>set.add(p),{vend:vf}); cacheProd={k,set}; }
-  return cacheProd.set;
-}
-// filtros recolhíveis: período, vendedor (diretoria), rede, UF, cidade, loja + extras de cada tela
 const icoFiltro='<svg viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>';
 const icoSeta='<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
 function toggleFiltros(el){ S.fAberto=!S.fAberto; el.closest('.fcard').classList.toggle('aberto',S.fAberto); }
+function txtProdutos(curto){
+  if(S.prods.length===1) return titulo(M.prod[S.prods[0]][0]);
+  if(S.prods.length>1) return S.prods.length+' produtos';
+  if(S.grupos.length===1) return S.grupos[0];
+  if(S.grupos.length>1) return S.grupos.length+' grupos';
+  return curto?'':'Todos os produtos';
+}
 function resumoFiltros(opts){
   const p=[periodoTxt()]; const vf=escopoVend();
-  if(U.perfil==='dir'&&vf>=0) p.push(nomeVend(vf));
-  if(opts.rede){ if(S.loja>=0) p.push(M.cli[S.loja][0]); else if(S.rede>=0) p.push(titulo(M.rede[S.rede])); }
+  if(opts.sem&&S.sem>=0) p.push('semana '+dm(S.sem));
+  if(U.perfil==='dir'&&vf>=0) p.push(nomeCurto(vf));
+  if(opts.rede){ if(opts.loja&&S.loja>=0) p.push(M.cli[S.loja][0]); else if(S.rede>=0) p.push(titulo(M.rede[S.rede])); }
   if(opts.local){ if(S.cidade) p.push(titulo(S.cidade)+(S.uf?'/'+S.uf:'')); else if(S.uf) p.push(S.uf); }
-  if(opts.produto&&S.prod>=0) p.push(titulo(M.prod[S.prod][0]));
+  if(opts.produto){ const t=txtProdutos(true); if(t) p.push(t); }
   if(opts.minimo&&S.minRk>0) p.push('mín. R$ '+nf0.format(S.minRk));
   return p.join(' · ');
 }
-function limparFiltros(){ S.vend=-1;S.rede=-1;S.loja=-1;S.busca='';S.uf='';S.cidade='';S.minRk=0;S.prod=-1;S.ord={};S.de=S.ate=M.ym.length-1;S.lim=20;cacheCli={k:null};render(); }
+function limparFiltros(){ S.vend=-1;S.rede=-1;S.loja=-1;S.busca='';S.uf='';S.cidade='';S.minRk=0;S.prods=[];S.grupos=[];S.sem=-1;S.ord={};S.de=S.ate=M.ym.length-1;S.lim=20;S.limL=30;render(); }
+const ordNome=(a,b)=>M.prod[a][0].localeCompare(M.prod[b][0],'pt',{numeric:true,sensitivity:'base'});
+const ordGrupo=(a,b)=>(a==='Outros')-(b==='Outros')||a.localeCompare(b,'pt');
 function filtrosHtml(opts={}){
+  OPTS_TELA=opts;
+  const o=opcoes(opts);
   const ops=M.ym.map((y,i)=>`<option value="${i}">${ymLab(i,true)}</option>`).reverse().join('');
   let h=`<div class="filtros">
     <div><label>De</label><select id="fDe" onchange="setPer('de',this.value)">${ops}</select></div>
     <div><label>Até</label><select id="fAte" onchange="setPer('ate',this.value)">${ops}</select></div>`;
+  h+=opts.extraTopo||'';
   if(U.perfil==='dir'){
-    const vend=VENDEDORES.map(v=>M.vi[v[1]]).filter(i=>i!==undefined);
-    const outros=M.vend.map((v,i)=>i).filter(i=>!vend.includes(i));
+    const tem=i=>o.vend.has(i)||i===S.vend;
+    const vend=VENDEDORES.map(v=>M.vi[v[1]]).filter(i=>i!==undefined&&tem(i));
+    const todosV=new Set(VENDEDORES.map(v=>M.vi[v[1]]));
+    const outros=M.vend.map((v,i)=>i).filter(i=>!todosV.has(i)&&tem(i)).sort((a,b)=>M.vend[a].localeCompare(M.vend[b],'pt'));
     h+=`<div class="full"><label>Vendedor</label><select id="fVend" onchange="S.vend=+this.value;S.rede=-1;S.loja=-1;S.busca='';S.uf='';S.cidade='';S.lim=20;render()">
       <option value="-1">Todos os vendedores (empresa)</option>
-      <optgroup label="Vendedores">${vend.map(i=>`<option value="${i}">${esc(nomeVend(i))}</option>`).join('')}</optgroup>
-      <optgroup label="Outros colaboradores">${outros.map(i=>`<option value="${i}">${esc(titulo(M.vend[i]))}</option>`).join('')}</optgroup>
+      ${vend.length?`<optgroup label="Vendedores">${vend.map(i=>`<option value="${i}">${esc(nomeVend(i))}</option>`).join('')}</optgroup>`:''}
+      ${outros.length?`<optgroup label="Outros colaboradores">${outros.map(i=>`<option value="${i}">${esc(titulo(M.vend[i]))}</option>`).join('')}</optgroup>`:''}
     </select></div>`;
   }
   if(opts.rede){
-    const set=cliSet(), cont={};
-    set.forEach(c=>{const r=M.cr[c]; cont[r]=(cont[r]||0)+1;});
-    const lr=Object.keys(cont).map(Number).sort((a,b)=>M.rede[a]==='SEM REDE'?1:M.rede[b]==='SEM REDE'?-1:M.rede[a].localeCompare(M.rede[b]));
-    if(S.rede>=0 && !cont[S.rede]){ S.rede=-1; S.loja=-1; }
+    const cont={}; for(const r in o.rede) cont[r]=o.rede[r].size;
+    const lr=Object.keys(cont).map(Number); if(S.rede>=0&&!cont[S.rede]) lr.push(S.rede);
+    lr.sort((a,b)=>M.rede[a]==='SEM REDE'?1:M.rede[b]==='SEM REDE'?-1:M.rede[a].localeCompare(M.rede[b]));
     h+=`<div class="full"><label>Rede</label><select onchange="S.rede=+this.value;S.loja=-1;S.busca='';S.cidade='';S.lim=20;render()">
-      <option value="-1">Todas as redes</option>${lr.map(r=>`<option ${r===S.rede?'selected':''} value="${r}">${esc(titulo(M.rede[r]))} (${cont[r]})</option>`).join('')}</select></div>`;
+      <option value="-1">Todas as redes</option>${lr.map(r=>`<option ${r===S.rede?'selected':''} value="${r}">${esc(titulo(M.rede[r]))} (${cont[r]||0})</option>`).join('')}</select></div>`;
     if(opts.local){
-      const base=[...set].filter(c=>S.rede<0||M.cr[c]===S.rede);
       if(M.temUF){
-        const ufs=[...new Set(base.map(c=>M.cli[c][5]).filter(Boolean))].sort();
-        if(S.uf&&!ufs.includes(S.uf)){ S.uf=''; }
+        const ufs=[...o.uf].filter(Boolean); if(S.uf&&!ufs.includes(S.uf)) ufs.push(S.uf); ufs.sort();
         h+=`<div><label>UF (estado)</label><select onchange="S.uf=this.value;S.cidade='';S.loja=-1;S.lim=20;render()"><option value="">Todas</option>${ufs.map(u=>`<option ${u===S.uf?'selected':''}>${esc(u)}</option>`).join('')}</select></div>`;
       }
-      const cids=[...new Set(base.filter(c=>!S.uf||M.cli[c][5]===S.uf).map(c=>M.cli[c][4]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt'));
-      if(S.cidade&&!cids.includes(S.cidade)){ S.cidade=''; }
+      const cids=[...o.cid].filter(Boolean); if(S.cidade&&!cids.includes(S.cidade)) cids.push(S.cidade); cids.sort((a,b)=>a.localeCompare(b,'pt'));
       h+=`<div class="${M.temUF?'':'full'}"><label>Cidade</label><select onchange="S.cidade=this.value;S.loja=-1;S.lim=20;render()"><option value="">Todas</option>${cids.map(c=>`<option ${c===S.cidade?'selected':''} value="${esc(c)}">${esc(titulo(c))}</option>`).join('')}</select></div>`;
     }
     if(opts.loja && S.rede>=0){
-      let lojas=[...set].filter(c=>M.cr[c]===S.rede&&(!S.uf||M.cli[c][5]===S.uf)&&(!S.cidade||M.cli[c][4]===S.cidade));
+      let lojas=[...o.loja].filter(c=>M.cr[c]===S.rede); if(S.loja>=0&&!lojas.includes(S.loja)) lojas.push(S.loja);
       const b=S.busca.trim().toUpperCase();
       if(b) lojas=lojas.filter(c=>(M.cli[c][0]+' '+M.cli[c][2]+' '+M.cli[c][4]).toUpperCase().includes(b)||c===S.loja);
-      if(S.loja>=0&&!lojas.includes(S.loja)) S.loja=-1;
       lojas.sort((a,c)=>M.cli[a][0].localeCompare(M.cli[c][0],'pt',{numeric:true}));
       h+=`<div class="full"><label>Nome (loja)</label><select onchange="S.loja=+this.value;S.lim=20;render()"><option value="-1">Todas as lojas da rede</option>${lojas.map(c=>`<option ${c===S.loja?'selected':''} value="${c}">${esc(M.cli[c][0])}${M.cli[c][4]?' – '+esc(titulo(M.cli[c][4])):''}</option>`).join('')}</select></div>`;
-      if(cont[S.rede]>15) h+=`<div class="full"><input type="text" placeholder="Buscar loja pelo nome ou cidade" value="${esc(S.busca)}" onchange="S.busca=this.value;render()"></div>`;
+      if((cont[S.rede]||0)>15) h+=`<div class="full"><input type="text" placeholder="Buscar loja pelo nome ou cidade" value="${esc(S.busca)}" onchange="S.busca=this.value;render()"></div>`;
     }
   }
   if(opts.produto){
-    const ps=[...prodSet()].sort((a,b)=>M.prod[a][0].localeCompare(M.prod[b][0],'pt',{numeric:true,sensitivity:'base'}));
-    if(S.prod>=0&&!ps.includes(S.prod)) S.prod=-1;
-    h+=`<div class="full"><label>Produto</label><select onchange="S.prod=+this.value;S.lim=20;render()"><option value="-1">Todos os produtos</option>${ps.map(i=>`<option ${i===S.prod?'selected':''} value="${i}">${esc(titulo(M.prod[i][0]))}</option>`).join('')}</select></div>`;
+    const tg=S.grupos.length?(S.grupos.length===1?`<b>${esc(S.grupos[0])}</b>`:`<b>${S.grupos.length} grupos</b> · ${esc(S.grupos.join(', '))}`):'Todos os grupos';
+    const tp=S.prods.length?(S.prods.length===1?`<b>${esc(titulo(M.prod[S.prods[0]][0]))}</b>`:`<b>${S.prods.length} produtos</b>`):(S.grupos.length?'Todos os produtos do grupo':'Todos os produtos');
+    h+=`<div class="full"><label>Grupo de produto (pode marcar vários)</label><button type="button" class="msbtn" onclick="abrirMulti('grupo')">${tg}</button></div>`;
+    h+=`<div class="full"><label>Produto (pode marcar vários)</label><button type="button" class="msbtn" onclick="abrirMulti('prod')">${tp}</button>
+      ${S.prods.length>1&&S.prods.length<=12?`<div class="selchips">${S.prods.map(p=>`<span><em>${esc(titulo(M.prod[p][0]))}</em><button type="button" aria-label="Tirar" onclick="tirarProd(${p})">×</button></span>`).join('')}</div>`:''}</div>`;
   }
   if(opts.minimo) h+=`<div class="full"><label>${opts.minimo}</label><input type="number" inputmode="numeric" min="0" placeholder="0" value="${S.minRk||''}" onchange="S.minRk=Math.max(0,+this.value||0);S.lim=20;render()"></div>`;
   h+=(opts.extra||'')+`<button class="limpar" onclick="limparFiltros()">Limpar filtros</button></div>`;
   return `<div class="card fcard ${S.fAberto?'aberto':''}"><div class="fcab" onclick="toggleFiltros(this)"><span class="t">${icoFiltro}Filtros</span><span class="res">${esc(resumoFiltros(opts))}</span><span class="seta">${icoSeta}</span></div><div class="fcorpo">${h}</div></div>`;
 }
+function tirarProd(p){ S.prods=S.prods.filter(x=>x!==p); S.lim=20; render(); }
+
+// ---------- seleção múltipla (grupos e produtos) ----------
+let MS=null;
+function abrirMulti(tipo){
+  const o=opcoes(OPTS_TELA); let itens;
+  if(tipo==='grupo'){
+    const cont={}; o.prodG.forEach(p=>{const g=M.grp[p]; cont[g]=(cont[g]||0)+1;});
+    S.grupos.forEach(g=>{ if(!cont[g]) cont[g]=0; });
+    itens=Object.keys(cont).sort(ordGrupo).map(g=>({v:g,t:g,s:cont[g]+(cont[g]===1?' produto':' produtos')+' com movimento'}));
+    MS={tipo,sel:new Set(S.grupos),itens};
+  } else {
+    const ps=[...o.prod]; S.prods.forEach(p=>{ if(!o.prod.has(p)) ps.push(p); }); ps.sort(ordNome);
+    itens=ps.map(p=>({v:p,t:titulo(M.prod[p][0]),s:M.grp[p]+' · cód. '+M.prod[p][1]}));
+    MS={tipo,sel:new Set(S.prods),itens};
+  }
+  const tit=tipo==='grupo'?'Grupos de produto':'Produtos';
+  document.getElementById('msBox').innerHTML=`<div class="tit"><span>${tit}</span><small id="msCont"></small></div>
+    ${tipo==='prod'?`<input type="search" placeholder="Buscar (ex.: forma, hot dog, brioche)" oninput="buscaMulti(this.value)">`:''}
+    <div class="acoes"><button type="button" onclick="marcarVisiveis(true)">Marcar ${tipo==='prod'?'os da lista':'todos'}</button><button type="button" onclick="marcarVisiveis(false)">Desmarcar todos</button></div>
+    <div class="lista" id="msLista">${itens.length?itens.map((x,i)=>`<label data-i="${i}" data-b="${esc(semAcento(x.t+' '+x.s))}"><input type="checkbox" ${MS.sel.has(x.v)?'checked':''} onchange="marcaMulti(${i},this.checked)"><span><b>${esc(x.t)}</b><small>${esc(x.s)}</small></span></label>`).join(''):'<div class="vazio">Nada com movimento nos filtros escolhidos.</div>'}</div>
+    <div class="rodms"><button type="button" style="background:#EEE9DD;color:var(--texto)" onclick="fecharMulti()">Cancelar</button><button type="button" style="background:var(--verde);color:#fff" onclick="aplicarMulti()">Aplicar</button></div>`;
+  contMulti();
+  document.getElementById('ms').classList.add('on');
+}
+function contMulti(){ const e=document.getElementById('msCont'); if(e&&MS) e.textContent=MS.sel.size?MS.sel.size+' marcado'+(MS.sel.size>1?'s':''):'nenhum = todos'; }
+function marcaMulti(i,on){ const v=MS.itens[i].v; if(on) MS.sel.add(v); else MS.sel.delete(v); contMulti(); }
+function buscaMulti(t){ const b=semAcento(t.trim()); document.querySelectorAll('#msLista label').forEach(l=>{ l.style.display=!b||l.dataset.b.includes(b)?'':'none'; }); }
+function marcarVisiveis(on){
+  document.querySelectorAll('#msLista label').forEach(l=>{ if(on&&l.style.display==='none') return; const cb=l.querySelector('input'); cb.checked=on; const v=MS.itens[+l.dataset.i].v; if(on) MS.sel.add(v); else MS.sel.delete(v); });
+  contMulti();
+}
+function fecharMulti(){ const e=document.getElementById('ms'); if(e) e.classList.remove('on'); MS=null; }
+function aplicarMulti(){
+  if(!MS) return;
+  if(MS.tipo==='grupo'){ S.grupos=[...MS.sel].sort(ordGrupo); if(S.grupos.length){ const g=new Set(S.grupos); S.prods=S.prods.filter(p=>g.has(M.grp[p])); } }
+  else S.prods=[...MS.sel].sort(ordNome);
+  fecharMulti(); S.lim=20; S.limL=30; render();
+}
+function setGrupos(gs){ S.grupos=gs; S.prods=[]; S.lim=20; render(); }
+
 function nomeVend(i){ const v=VENDEDORES.find(x=>x[1]===M.vend[i]); return v?v[0]:titulo(M.vend[i]); }
+function nomeCurto(i){ const v=VENDEDORES.find(x=>x[1]===M.vend[i]); return v?v[2]:titulo(M.vend[i].replace(/\s*\(P\)\s*$/i,'')); }
 function setPer(k,v){ v=+v; S[k]=v; if(S.de>S.ate){ if(k==='de') S.ate=v; else S.de=v; } S.lim=20; render(); }
 function aplicarFiltros(){
   const a=document.getElementById('fDe'),b=document.getElementById('fAte'),c=document.getElementById('fVend');
@@ -375,13 +550,15 @@ function render(){
   limparCharts();
   const app=document.getElementById('app');
   if(!U||!M){ app.innerHTML=telaLogin(); return; }
-  const p=pagina();
+  const p=pagina(); if(telaAtual===null) telaAtual=p;
   if(p==='inicio') app.innerHTML=telaInicio();
   if(p==='vendas'){ app.innerHTML=telaVendas(); aplicarFiltros(); grafVendas(); }
   if(p==='clientes'){ app.innerHTML=telaClientes(); aplicarFiltros(); }
   if(p==='ranking'){ app.innerHTML=telaRanking(); aplicarFiltros(); }
   if(p==='produtos'){ app.innerHTML=telaProdutos(); aplicarFiltros(); }
   if(p==='prodloja'){ app.innerHTML=telaProdLoja(); aplicarFiltros(); }
+  if(p==='producao'){ app.innerHTML=telaProducao(); aplicarFiltros(); grafProducao(); }
+  if(p==='grupos'){ app.innerHTML=telaGrupos(); }
 }
 
 function telaLogin(msg){
@@ -408,7 +585,7 @@ async function entrar(ev){
 }
 async function abrir(){
   document.getElementById('app').innerHTML='<div class="carregando"><div class="spin"></div><div>Carregando seus indicadores…</div></div>';
-  try{ await carregarDados(); location.hash='inicio'; render(); }
+  try{ await carregarDados(); PILHA=[]; history.replaceState({app:1,d:0},'','#inicio'); telaAtual='inicio'; render(); }
   catch(err){ console.error(err); U=null; M=null; try{await SB.auth.signOut()}catch(e){}
     document.getElementById('app').innerHTML=telaLogin('Não foi possível carregar os dados ('+(err&&err.message||err)+'). Verifique a internet e tente de novo.'); }
 }
@@ -420,7 +597,8 @@ function telaInicio(){
   const vf=escopoVend();
   const esc2=U.perfil==='dir'?(vf>=0?'Vendedor: '+nomeVend(vf):'Visão: empresa toda'):'Seus clientes';
   const atual=new Date(M.atualizado+'T12:00:00').toLocaleDateString('pt-BR');
-  const btn=(id,txt,svg)=>`<button onclick="ir('${id}')"><div class="ic"><svg viewBox="0 0 24 24">${svg}</svg></div>${txt}</button>`;
+  const btn=(id,txt,svg,cls)=>`<button ${cls?`class="${cls}"`:''} onclick="ir('${id}')"><div class="ic"><svg viewBox="0 0 24 24">${svg}</svg></div>${txt}</button>`;
+  const dir=U.perfil==='dir';
   return topo('PSS Vendas',false)+`<main>
    ${marcas()}
    <p class="ola">Olá, ${esc(U.nome.split(' ')[0])}!</p>
@@ -439,7 +617,8 @@ function telaInicio(){
      ${btn('clientes','Clientes','<path d="M3 9l1.5-5h15L21 9M3 9h18M3 9v11h18V9M9 20v-6h6v6"/>')}
      ${btn('ranking','Ranking de clientes','<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 6h3v2a3 3 0 0 1-3 3M7 6H4v2a3 3 0 0 0 3 3"/>')}
      ${btn('produtos','Produtos','<path d="M5 11c0-4 3-7 7-7s7 3 7 7v8H5v-8zM5 15h14"/>')}
-     ${btn('prodloja','Produto × Loja','<path d="M4 11c0-3 2.2-5 5-5s5 2 5 5v6H4v-6zM4 14h10M15 10l1-3h5l1 3M15 10h7v9h-7zM18 19v-3"/>').replace('<button','<button class="largo"')}
+     ${btn('prodloja','Produto × Loja','<path d="M4 11c0-3 2.2-5 5-5s5 2 5 5v6H4v-6zM4 14h10M15 10l1-3h5l1 3M15 10h7v9h-7zM18 19v-3"/>',dir?'':'largo')}
+     ${dir?btn('producao','Produção','<path d="M3 21V10l5 3v-3l5 3v-3l5 3V4h3v17H3zM7 17h2M12 17h2M17 17h2"/>'):''}
    </div>
    <p class="prot" style="margin-top:16px">Dados atualizados em ${esc(M.gerado||'')}</p>
    ${rodape()}
@@ -508,6 +687,7 @@ const notaOrdem=()=>S.ordCli==='pct'?`Ordenado pelo maior % de trocas + devoluç
 
 // ---------- tabelas com cabeçalho ordenável (toque no título da coluna) ----------
 // col: {t:título, s:valor p/ ordenar (null = sempre no fim), h:html da célula, cls, txt (ordem alfabética), asc (1º toque crescente), g (grupo fixo, ex.: abaixo do mínimo)}
+// o: {lim, def:{c,d}, tr:(x)=>atributos da linha, cls, foot:[html por coluna]}
 const TABS={};
 function ordTab(id,j){
   const T=TABS[id]; if(!T) return; const st=S.ord[id]||T.def, c=T.cols[j];
@@ -525,19 +705,22 @@ function tab(id,cols,lst,o={}){
   if(o.lim) arr=arr.slice(0,o.lim);
   const at=st||o.def||{};
   return `<table class="ord ${o.cls||''}"><thead><tr>${cols.map((c,j)=>`<th class="${at.c===j?'on':''}" onclick="ordTab('${id}',${j})">${c.t}<i>${at.c===j?(at.d>0?'▲':'▼'):'⇅'}</i></th>`).join('')}</tr></thead><tbody>
-   ${arr.map(x=>`<tr ${o.tr?o.tr(x):''}>${cols.map(c=>`<td class="${c.cls||''}">${c.h(x)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+   ${arr.map(x=>`<tr ${o.tr?o.tr(x):''}>${cols.map(c=>`<td class="${c.cls||''}">${c.h(x)}</td>`).join('')}</tr>`).join('')}</tbody>${o.foot?`<tfoot><tr>${o.foot.map((f,j)=>`<td class="${j?'':'l'}">${f}</td>`).join('')}</tr></tfoot>`:''}</table>`;
 }
 const locCli=c=>titulo(M.cli[c][1])+' · '+titulo(M.cli[c][4])+(M.cli[c][5]?'/'+M.cli[c][5]:'');
 const pcVal=x=>x.fat>0?x.dt/x.fat:null;
 const colRank={t:'#',asc:1,s:x=>x.rk,h:x=>`<span style="color:var(--sub);font-weight:800">${x.rk}</span>`};
-const colLoja={t:'Loja',txt:1,cls:'nome l',s:x=>M.cli[x.c][0],h:x=>`${esc(M.cli[x.c][0])}<small>${esc(locCli(x.c))}</small>`};
-const colProd={t:'Produto',txt:1,cls:'nome l',s:x=>titulo(M.prod[x.p][0]),h:x=>esc(titulo(M.prod[x.p][0]))};
+const colLoja={t:'Loja',txt:1,cls:'nome l',s:x=>M.cli[x.c][0],h:x=>`${esc(M.cli[x.c][0])}<small>${esc(locCli(x.c))}</small>${vdHtml(x.c,'loja')}`};
+const colProd={t:'Produto',txt:1,cls:'nome l',s:x=>titulo(M.prod[x.p][0]),h:x=>`${esc(titulo(M.prod[x.p][0]))}${S.grupos.length!==1?`<small>${esc(M.grp[x.p])}</small>`:''}`};
 const colVenda={t:'Venda<br>R$ · un.',s:x=>x.fat,h:x=>`${Rt(x.fat)}<small class="u">${Q(x.qv)} un.</small>`};
 const colDT={t:'DEV+TRC<br>R$ · un.',s:x=>x.dt,h:x=>`${Rt(x.dt)}<small class="u">${Q(x.qdt)} un.</small>`};
 const colPct=()=>{const min=S.minRk*100; return {t:'%',g:x=>x.fat>0&&x.fat<min?1:0,s:pcVal,h:x=>pctCel(x.fat,x.dt)};};
 const defOrdCli=(ini)=>S.ordCli==='pct'?{c:ini+2,d:-1}:{c:ini,d:-1};
-const trLoja=x=>`onclick="S.rede=M.cr[${x.c}];S.loja=${x.c};S.lim=20;S.ord={};render();window.scrollTo(0,0)" style="cursor:pointer"`;
+const trLoja=x=>`onclick="abrirLoja(${x.c})" class="click"`;
+const trLojaCli=x=>`onclick="abrirLojaCli(${x.c})" class="click"`;
+const trProd=x=>`onclick="abrirProd(${x.p})" class="click"`;
 const notaToque='Toque no título de uma coluna para ordenar; toque de novo para inverter.';
+const notaVoltar='O botão ‹ volta um passo.';
 
 // tabelas reutilizáveis
 function tabProdutos(id,lst,mostrarRank,o={}){
@@ -545,23 +728,25 @@ function tabProdutos(id,lst,mostrarRank,o={}){
   const cols=mostrarRank?[colRank,colProd,colVenda,colDT,colPct()]:[colProd,colVenda,colDT,colPct()];
   return tab(id,cols,lst,o);
 }
-function tabLojas(id,ls,clicavel,o={}){
-  return tab(id,[colLoja,colVenda,colDT,colPct()],ls.map(([c,v])=>({c:+c,...v})),{...o,tr:clicavel?trLoja:null});
+function tabLojas(id,ls,tr,o={}){
+  return tab(id,[colLoja,colVenda,colDT,colPct()],ls.map(([c,v])=>({c:+c,...v})),{...o,tr:tr||null});
 }
 function agregaDetalhe(){
   const tot={fat:0,qv:0,dev:0,qd:0,trc:0,qt:0}, porP={}, porL={};
   cada(S.de,S.ate,(mi,c,p,fat,qv,dev,qd,trc,qt)=>{
     tot.fat+=fat;tot.qv+=qv;tot.dev+=dev;tot.qd+=qd;tot.trc+=trc;tot.qt+=qt;
     const o=porP[p]||(porP[p]={fat:0,qv:0,dt:0,qdt:0}); o.fat+=fat;o.qv+=qv;o.dt+=dev+trc;o.qdt+=qd+qt;
-    const l=porL[c]||(porL[c]={fat:0,qv:0,dt:0,qdt:0}); l.fat+=fat;l.qv+=qv;l.dt+=dev+trc;l.qdt+=qd+qt; },{rede:S.rede,loja:S.loja,local:true});
+    const l=porL[c]||(porL[c]={fat:0,qv:0,dt:0,qdt:0}); l.fat+=fat;l.qv+=qv;l.dt+=dev+trc;l.qdt+=qd+qt; },{rede:S.rede,loja:S.loja,local:true,pm:prodMask()});
   tot.dt=tot.dev+tot.trc; tot.qdt=tot.qd+tot.qt; tot.pct=tot.fat?tot.dt/tot.fat*100:NaN;
   return {tot,porP,porL};
 }
 function cabecalhoEscopo(nLojas){
   const l=S.loja>=0?M.cli[S.loja]:null;
   const loc=!l&&(S.cidade||S.uf)?' · '+(S.cidade?titulo(S.cidade)+(S.uf?'/'+S.uf:''):S.uf):'';
+  const tp=txtProdutos(true);
+  const vd=l?vendTxt(S.loja,'loja'):'';
   return `<div class="card cab-cli"><div style="font-weight:800;font-size:17px">${esc((l?l[0]:S.rede>=0?titulo(M.rede[S.rede])+' – todas as lojas':'Todas as redes')+loc)}</div>
-    <div class="nota">${l?esc(titulo(l[2]))+' · '+esc(titulo(l[4]))+' · cód. '+l[3]:nLojas+' lojas com movimento'} · ${periodoTxt()}${U.perfil==='dir'&&escopoVend()>=0?' · '+esc(nomeVend(escopoVend())):''}</div></div>`;
+    <div class="nota">${l?esc(titulo(l[2]))+' · '+esc(titulo(l[4]))+' · cód. '+l[3]:nLojas+' lojas com movimento'} · ${periodoTxt()}${U.perfil==='dir'&&escopoVend()>=0?' · '+esc(nomeVend(escopoVend())):''}${vd&&escopoVend()<0?' · '+esc(vd):''}${tp?' · <b>'+esc(tp)+'</b>':''}</div></div>`;
 }
 function cardsTotais(tot){
   return `<div class="kpis">
@@ -572,16 +757,16 @@ function cardsTotais(tot){
 }
 
 function telaClientes(){
-  let h=topo('Clientes',true)+'<main>'+filtrosHtml({rede:true,local:true,loja:true,minimo:'Venda mínima (R$) — quem vender menos vai para o fim das listas'});
+  let h=topo('Clientes',true)+'<main>'+filtrosHtml({rede:true,local:true,loja:true,produto:true,minimo:'Venda mínima (R$) — quem vender menos vai para o fim das listas'});
   const {tot,porP,porL}=agregaDetalhe(); const nL=Object.keys(porL).length;
   h+=cabecalhoEscopo(nL)+cardsTotais(tot);
   if(S.loja<0){
     let ls=Object.entries(porL);
     ls=S.ordCli==='pct'?ordemPct(ls,x=>x[1].fat,x=>x[1].dt):ls.sort((a,b)=>b[1].fat-a[1].fat);
-    h+=`<div class="card"><h2>Lojas ${S.rede>=0?'da rede':''} <span class="tag">${ls.length}</span></h2>${abasOrdem('loja')}${ls.length?`<div class="rol" style="max-height:420px">${tabLojas('cLojas',ls,true,{lim:S.lim,def:defOrdCli(1)})}</div>
-      ${ls.length>S.lim?`<button class="mais" onclick="S.lim+=30;render()">Mostrar mais lojas</button>`:''}<p class="nota">${notaOrdem()} Toque numa loja para ver só ela. ${notaToque}</p>`:'<div class="vazio">Sem movimento no período.</div>'}</div>`;
+    h+=`<div class="card"><h2>Lojas ${S.rede>=0?'da rede':''} <span class="tag">${ls.length}</span></h2>${abasOrdem('loja')}${ls.length?`<div class="rol" style="max-height:420px">${tabLojas('cLojas',ls,trLoja,{lim:S.lim,def:defOrdCli(1)})}</div>
+      ${ls.length>S.lim?`<button class="mais" onclick="S.lim+=30;render()">Mostrar mais lojas</button>`:''}<p class="nota">${notaOrdem()} Toque numa loja para ver só ela (${notaVoltar}) ${notaToque}</p>`:'<div class="vazio">Sem movimento no período.</div>'}</div>`;
   }
-  let ps=Object.entries(porP).map(([p,o])=>({p,...o}));
+  let ps=Object.entries(porP).map(([p,o])=>({p:+p,...o}));
   ps=S.ordCli==='pct'?ordemPct(ps,x=>x.fat,x=>x.dt):ps.sort((a,b)=>b.fat-a.fat);
   h+=`<div class="card"><h2>Produto a produto</h2>
     ${abasOrdem('prod')}
@@ -591,25 +776,28 @@ function telaClientes(){
 
 function agrupaClientes(de,ate,nivel){
   const out={};
-  cada(de,ate,(mi,c,p,fat,qv,dev,qd,trc,qt)=>{ const k=nivel==='rede'?M.cr[c]:c; const o=out[k]||(out[k]={fat:0,dt:0,qdt:0}); o.fat+=fat;o.dt+=dev+trc;o.qdt+=qd+qt; },{rede:S.rede,local:true});
+  cada(de,ate,(mi,c,p,fat,qv,dev,qd,trc,qt)=>{ const k=nivel==='rede'?M.cr[c]:c; const o=out[k]||(out[k]={fat:0,dt:0,qdt:0}); o.fat+=fat;o.dt+=dev+trc;o.qdt+=qd+qt; },{rede:S.rede,local:true,pm:prodMask()});
   return out;
 }
 function nomeCli(k,nivel){ return nivel==='rede'?{n:titulo(M.rede[k]),s:''}:{n:M.cli[k][0],s:titulo(M.cli[k][1])+' · '+titulo(M.cli[k][4])+(M.cli[k][5]?'/'+M.cli[k][5]:'')}; }
+const trCli=nivel=>x=>nivel==='rede'?`onclick="abrirRedeCli(${x.k})" class="click"`:`onclick="abrirLojaCli(${x.k})" class="click"`;
 function telaRanking(){
   const nivel=S.nivelRk, min=S.minRk*100;
   const extra=`<div class="full"><label>Ver por</label><select onchange="S.nivelRk=this.value;S.lim=20;render()"><option value="loja" ${nivel==='loja'?'selected':''}>Loja</option><option value="rede" ${nivel==='rede'?'selected':''}>Rede</option></select></div>`;
-  let h=topo('Ranking de clientes',true)+'<main>'+filtrosHtml({rede:true,local:true,minimo:'Venda mínima (R$) para entrar no ranking',extra});
+  let h=topo('Ranking de clientes',true)+'<main>'+filtrosHtml({rede:true,local:true,produto:true,minimo:'Venda mínima (R$) para entrar no ranking',extra});
   h+=`<div class="abas"><button class="${S.abaRk==='melhores'?'on':''}" onclick="S.abaRk='melhores';S.lim=20;S.ord={};render()">Melhores</button><button class="${S.abaRk==='piores'?'on':''}" onclick="S.abaRk='piores';S.lim=20;S.ord={};render()">Piores</button><button class="${S.abaRk==='evol'?'on':''}" onclick="S.abaRk='evol';S.lim=20;S.ord={};render()">Evolução</button></div>`;
+  const colNome=(extraSub)=>({t:nivel==='rede'?'Rede':'Loja',txt:1,cls:'nome l',s:x=>nomeCli(x.k,nivel).n,h:x=>{const n=nomeCli(x.k,nivel);return `${esc(n.n)}<small>${esc(n.s)}${extraSub?(n.s?' · ':'')+extraSub(x):''}</small>${vdHtml(x.k,nivel)}`}});
+  const toque=`Toque numa ${nivel==='rede'?'rede':'loja'} para abrir em Clientes (${notaVoltar})`;
   if(S.abaRk==='evol'){
     const mi=S.ate; if(mi<1) return h+'<div class="card vazio">Escolha um mês com mês anterior disponível.</div></main>';
     const a=agrupaClientes(mi,mi,nivel), b=agrupaClientes(mi-1,mi-1,nivel); const lst=[];
     for(const k in a){ if(!b[k]) continue; if(a[k].fat<=0||b[k].fat<=0||a[k].fat<min||b[k].fat<min) continue; const pa=a[k].dt/a[k].fat*100, pb=b[k].dt/b[k].fat*100; lst.push({k:+k,pa,pb,d:pa-pb,fat:a[k].fat}); }
     const pior=lst.filter(x=>x.d>0).sort((x,y)=>y.d-x.d), melhor=lst.filter(x=>x.d<0).sort((x,y)=>x.d-y.d);
-    const cEv=[{t:nivel==='rede'?'Rede':'Loja',txt:1,cls:'nome',s:x=>nomeCli(x.k,nivel).n,h:x=>{const n=nomeCli(x.k,nivel);return `${esc(n.n)}<small>${esc(n.s)}${n.s?' · ':''}venda ${Rk(x.fat)}</small>`}},
+    const cEv=[colNome(x=>'venda '+Rk(x.fat)),
       {t:ymLab(mi-1),s:x=>x.pb,h:x=>P(x.pb)},{t:ymLab(mi),s:x=>x.pa,h:x=>pctTag(x.pa)},
       {t:'Variação',s:x=>x.d,h:x=>`<span class="${x.d>0?'down':'up'}">${x.d>0?'▲':'▼'} ${nf1.format(Math.abs(x.d))} p.p.</span>`}];
-    const tabEv=(id,arr,tit,def)=>`<div class="card"><h2>${tit} <span class="tag">${arr.length}</span></h2>${arr.length?`<div class="rol" style="max-height:380px">${tab(id,cEv,arr,{lim:S.lim,def})}</div>`:'<div class="vazio">Nenhum.</div>'}</div>`;
-    return h+`<p class="nota" style="margin:-4px 2px 10px">Compara o % de trocas + devoluções de ${ymLab(mi,true)} com ${ymLab(mi-1,true)} (mês “Até” do filtro). Só clientes com venda nos dois meses${S.minRk>0?' acima do mínimo':''}. ${notaToque}</p>`+tabEv('evP',pior,'Pioraram',{c:3,d:-1})+tabEv('evM',melhor,'Melhoraram',{c:3,d:1})+(Math.max(pior.length,melhor.length)>S.lim?`<button class="mais" onclick="S.lim+=20;render()">Mostrar mais</button>`:'')+rodape()+'</main>';
+    const tabEv=(id,arr,tit,def)=>`<div class="card"><h2>${tit} <span class="tag">${arr.length}</span></h2>${arr.length?`<div class="rol" style="max-height:380px">${tab(id,cEv,arr,{lim:S.lim,def,tr:trCli(nivel)})}</div>`:'<div class="vazio">Nenhum.</div>'}</div>`;
+    return h+`<p class="nota" style="margin:-4px 2px 10px">Compara o % de trocas + devoluções de ${ymLab(mi,true)} com ${ymLab(mi-1,true)} (mês “Até” do filtro). Só clientes com venda nos dois meses${S.minRk>0?' acima do mínimo':''}. ${toque}. ${notaToque}</p>`+tabEv('evP',pior,'Pioraram',{c:3,d:-1})+tabEv('evM',melhor,'Melhoraram',{c:3,d:1})+(Math.max(pior.length,melhor.length)>S.lim?`<button class="mais" onclick="S.lim+=20;render()">Mostrar mais</button>`:'')+rodape()+'</main>';
   }
   const g=agrupaClientes(S.de,S.ate,nivel);
   let lst=Object.entries(g).filter(([k,o])=>o.fat>=min&&o.fat>0).map(([k,o])=>({k:+k,...o,p:o.dt/o.fat*100}));
@@ -617,32 +805,40 @@ function telaRanking(){
   const acima=lst.filter(x=>x.p>LIMITE).length;
   h+=`<div class="kpis"><div class="kpi"><div class="rot">${nivel==='rede'?'Redes':'Lojas'} no ranking</div><div class="val">${lst.length}</div><div class="det">${S.minRk>0?'venda ≥ R$ '+nf0.format(S.minRk):'com venda no período'}</div></div>
       <div class="kpi ${acima?'ruim':''}"><div class="rot">Acima de ${LIMITE}%</div><div class="val">${acima}</div><div class="det">${lst.length?P(acima/lst.length*100)+' do total':''}</div></div></div>`;
-  h+=`<p class="nota" style="margin:-4px 2px 10px">${S.abaRk==='melhores'?'Melhores = menor % de trocas + devoluções sobre a venda; empate decide pela maior venda.':'Piores = maior % de trocas + devoluções sobre a venda.'} ${S.minRk>0?` Só entra quem vendeu pelo menos R$ ${nf0.format(S.minRk)} no período.`:''}</p>`;
+  h+=`<p class="nota" style="margin:-4px 2px 10px">${S.abaRk==='melhores'?'Melhores = menor % de trocas + devoluções sobre a venda; empate decide pela maior venda.':'Piores = maior % de trocas + devoluções sobre a venda.'} ${S.minRk>0?` Só entra quem vendeu pelo menos R$ ${nf0.format(S.minRk)} no período.`:''}${txtProdutos(true)?' Só os produtos escolhidos: '+esc(txtProdutos(true))+'.':''}</p>`;
   lst.forEach((x,i)=>x.rk=i+1);
-  const cRk=[colRank,{t:nivel==='rede'?'Rede':'Loja',txt:1,cls:'nome l',s:x=>nomeCli(x.k,nivel).n,h:x=>{const n=nomeCli(x.k,nivel);return `${esc(n.n)}<small>${esc(n.s)}</small>`}},
+  const cRk=[colRank,colNome(null),
     {t:'Venda R$',s:x=>x.fat,h:x=>Rt(x.fat)},{t:'DEV+TRC R$',s:x=>x.dt,h:x=>Rt(x.dt)},{t:'%',s:x=>x.p,h:x=>pctTag(x.p)}];
-  h+=`<div class="card"><h2>${S.abaRk==='melhores'?'Menor % de trocas + devoluções':'Maior % de trocas + devoluções'}</h2>${lst.length?`${tab('rk',cRk,lst,{lim:S.lim,def:{c:4,d:S.abaRk==='melhores'?1:-1}})}<p class="nota">${notaToque}</p>
+  h+=`<div class="card"><h2>${S.abaRk==='melhores'?'Menor % de trocas + devoluções':'Maior % de trocas + devoluções'}</h2>${lst.length?`${tab('rk',cRk,lst,{lim:S.lim,def:{c:4,d:S.abaRk==='melhores'?1:-1},tr:trCli(nivel)})}<p class="nota">${toque}. ${notaToque}</p>
    ${lst.length>S.lim?`<button class="mais" onclick="S.lim+=20;render()">Mostrar mais</button>`:''}`:'<div class="vazio">Nenhum cliente com venda acima do mínimo.</div>'}</div>`;
   return h+rodape()+'</main>';
 }
 
 function telaProdutos(){
-  let h=topo('Produtos',true)+'<main>'+filtrosHtml({rede:true,local:true,loja:true,minimo:'Venda mínima (R$) para entrar em Melhores e Piores'});
+  let h=topo('Produtos',true)+'<main>'+filtrosHtml({rede:true,local:true,loja:true,produto:true,minimo:'Venda mínima (R$) para entrar em Melhores e Piores'});
   const {tot,porP,porL}=agregaDetalhe(); const nL=Object.keys(porL).length;
   h+=cabecalhoEscopo(nL)+cardsTotais(tot);
-  h+=`<div class="abas"><button class="${S.abaPr==='todos'?'on':''}" onclick="S.abaPr='todos';S.lim=20;S.ord={};render()">Todos</button><button class="${S.abaPr==='melhores'?'on':''}" onclick="S.abaPr='melhores';S.lim=20;S.ord={};render()">Melhores</button><button class="${S.abaPr==='piores'?'on':''}" onclick="S.abaPr='piores';S.lim=20;S.ord={};render()">Piores</button></div>`;
-  let lst=Object.entries(porP).map(([p,o])=>({p,...o,pc:o.fat?o.dt/o.fat*100:Infinity}));
-  let nota;
-  if(S.abaPr==='todos'){ lst.sort((a,b)=>b.fat-a.fat); nota='Todos os produtos, do mais vendido para o menos vendido.'; }
-  else if(S.abaPr==='melhores'){ lst=lst.filter(x=>x.fat>0&&x.fat>=S.minRk*100).sort((a,b)=>a.pc-b.pc||b.fat-a.fat); nota=`Melhores = menor % de trocas + devoluções sobre a venda (empate: maior venda).${S.minRk>0?` Só produtos com venda ≥ R$ ${nf0.format(S.minRk)}.`:''}`; }
-  else { lst=lst.filter(x=>x.fat>=S.minRk*100||(x.fat<=0&&x.dt>0)).sort((a,b)=>b.pc-a.pc||b.dt-a.dt); nota=`Piores = maior % de trocas + devoluções sobre a venda.${S.minRk>0?` Só produtos com venda ≥ R$ ${nf0.format(S.minRk)}.`:''}`; }
-  h+=`<p class="nota" style="margin:-4px 2px 10px">${nota}</p>`;
-  h+=`<div class="card">${lst.length?`<div class="rol" style="max-height:560px">${tabProdutos('pProd',lst,S.abaPr!=='todos',{lim:S.abaPr==='todos'?0:S.lim,def:S.abaPr==='todos'?{c:1,d:-1}:{c:4,d:S.abaPr==='melhores'?1:-1}})}</div><p class="nota">${notaToque}</p>
-    ${S.abaPr!=='todos'&&lst.length>S.lim?`<button class="mais" onclick="S.lim+=20;render()">Mostrar mais</button>`:''}`:'<div class="vazio">Sem produtos no período.</div>'}</div>`;
+  h+=`<div class="abas"><button class="${S.abaPr==='todos'?'on':''}" onclick="S.abaPr='todos';S.lim=20;S.ord={};render()">Todos</button><button class="${S.abaPr==='melhores'?'on':''}" onclick="S.abaPr='melhores';S.lim=20;S.ord={};render()">Melhores</button><button class="${S.abaPr==='piores'?'on':''}" onclick="S.abaPr='piores';S.lim=20;S.ord={};render()">Piores</button><button class="${S.abaPr==='grupos'?'on':''}" onclick="S.abaPr='grupos';S.lim=20;S.ord={};render()">Grupos</button></div>`;
+  if(S.abaPr==='grupos'){
+    const pg={}; for(const p in porP){ const g=M.grp[p], o=porP[p], a=pg[g]||(pg[g]={g,fat:0,qv:0,dt:0,qdt:0,n:0}); a.fat+=o.fat;a.qv+=o.qv;a.dt+=o.dt;a.qdt+=o.qdt;a.n++; }
+    const lst=Object.values(pg).sort((a,b)=>b.fat-a.fat);
+    const cols=[{t:'Grupo',txt:1,cls:'nome l',s:x=>x.g,h:x=>`${esc(x.g)}<small>${x.n} produto${x.n>1?'s':''}</small>`},colVenda,colDT,colPct()];
+    h+=`<div class="card">${lst.length?`<div class="rol" style="max-height:560px">${tab('pGrp',cols,lst,{def:{c:1,d:-1},tr:x=>`onclick="setGrupos(['${esc(x.g).replace(/'/g,"\\'")}'])" class="click"`})}</div><p class="nota">Venda por grupo de produto. Toque num grupo para filtrar só ele. ${notaToque}</p>`:'<div class="vazio">Sem produtos no período.</div>'}
+      ${U.perfil==='dir'?`<button class="mais" onclick="ir('grupos')">Conferir como os produtos foram agrupados</button>`:''}</div>`;
+  } else {
+    let lst=Object.entries(porP).map(([p,o])=>({p:+p,...o,pc:o.fat?o.dt/o.fat*100:Infinity}));
+    let nota;
+    if(S.abaPr==='todos'){ lst.sort((a,b)=>b.fat-a.fat); nota='Todos os produtos, do mais vendido para o menos vendido.'; }
+    else if(S.abaPr==='melhores'){ lst=lst.filter(x=>x.fat>0&&x.fat>=S.minRk*100).sort((a,b)=>a.pc-b.pc||b.fat-a.fat); nota=`Melhores = menor % de trocas + devoluções sobre a venda (empate: maior venda).${S.minRk>0?` Só produtos com venda ≥ R$ ${nf0.format(S.minRk)}.`:''}`; }
+    else { lst=lst.filter(x=>x.fat>=S.minRk*100||(x.fat<=0&&x.dt>0)).sort((a,b)=>b.pc-a.pc||b.dt-a.dt); nota=`Piores = maior % de trocas + devoluções sobre a venda.${S.minRk>0?` Só produtos com venda ≥ R$ ${nf0.format(S.minRk)}.`:''}`; }
+    h+=`<p class="nota" style="margin:-4px 2px 10px">${nota}</p>`;
+    h+=`<div class="card">${lst.length?`<div class="rol" style="max-height:560px">${tabProdutos('pProd',lst,S.abaPr!=='todos',{lim:S.abaPr==='todos'?0:S.lim,def:S.abaPr==='todos'?{c:1,d:-1}:{c:4,d:S.abaPr==='melhores'?1:-1},tr:trProd})}</div><p class="nota">Toque num produto para ver loja a loja (${notaVoltar}) ${notaToque}</p>
+      ${S.abaPr!=='todos'&&lst.length>S.lim?`<button class="mais" onclick="S.lim+=20;render()">Mostrar mais</button>`:''}`:'<div class="vazio">Sem produtos no período.</div>'}</div>`;
+  }
   if(S.loja<0){
     const ls=ordemPct(Object.entries(porL),x=>x[1].fat,x=>x[1].dt);
-    h+=`<div class="card"><h2>Loja a loja <span class="tag">${ls.length}</span></h2>${ls.length?`<div class="rol" style="max-height:420px">${tabLojas('pLojas',ls,true,{lim:S.limL||30,def:{c:3,d:-1}})}</div>
-      ${ls.length>(S.limL||30)?`<button class="mais" onclick="S.limL=(S.limL||30)+30;render()">Mostrar mais lojas</button>`:''}<p class="nota">Ordenado pelo maior % de trocas + devoluções sobre a venda${S.minRk>0?` (lojas que venderam menos de R$ ${nf0.format(S.minRk)} ficam no fim)`:''}. Toque numa loja para ver os produtos dela. ${notaToque}</p>`:'<div class="vazio">Sem movimento.</div>'}</div>`;
+    h+=`<div class="card"><h2>Loja a loja <span class="tag">${ls.length}</span></h2>${ls.length?`<div class="rol" style="max-height:420px">${tabLojas('pLojas',ls,trLoja,{lim:S.limL||30,def:{c:3,d:-1}})}</div>
+      ${ls.length>(S.limL||30)?`<button class="mais" onclick="S.limL=(S.limL||30)+30;render()">Mostrar mais lojas</button>`:''}<p class="nota">Ordenado pelo maior % de trocas + devoluções sobre a venda${S.minRk>0?` (lojas que venderam menos de R$ ${nf0.format(S.minRk)} ficam no fim)`:''}. Toque numa loja para ver os produtos dela (${notaVoltar}) ${notaToque}</p>`:'<div class="vazio">Sem movimento.</div>'}</div>`;
   }
   return h+rodape()+'</main>';
 }
@@ -652,24 +848,146 @@ function telaProdLoja(){
   const tot={fat:0,qv:0,dev:0,qd:0,trc:0,qt:0}, porL={};
   cada(S.de,S.ate,(mi,c,p,fat,qv,dev,qd,trc,qt)=>{
     tot.fat+=fat;tot.qv+=qv;tot.dev+=dev;tot.qd+=qd;tot.trc+=trc;tot.qt+=qt;
-    const l=porL[c]||(porL[c]={fat:0,qv:0,dt:0,qdt:0}); l.fat+=fat;l.qv+=qv;l.dt+=dev+trc;l.qdt+=qd+qt; },{rede:S.rede,loja:S.loja,local:true,prod:S.prod});
+    const l=porL[c]||(porL[c]={fat:0,qv:0,dt:0,qdt:0}); l.fat+=fat;l.qv+=qv;l.dt+=dev+trc;l.qdt+=qd+qt; },{rede:S.rede,loja:S.loja,local:true,pm:prodMask()});
   tot.dt=tot.dev+tot.trc; tot.qdt=tot.qd+tot.qt; tot.pct=tot.fat?tot.dt/tot.fat*100:NaN;
-  const nomeP=S.prod>=0?titulo(M.prod[S.prod][0]):'Todos os produtos';
+  const nomeP=txtProdutos(false);
+  const lista=S.prods.length>1?S.prods.map(p=>titulo(M.prod[p][0])).join(' · '):'';
   const ls=ordemPct(Object.entries(porL).map(([c,o])=>({c:+c,...o})),x=>x.fat,x=>x.dt);
-  h+=`<div class="card cab-cli"><div style="font-weight:800;font-size:17px">${esc(nomeP)}</div>
+  h+=`<div class="card cab-cli"><div style="font-weight:800;font-size:17px">${esc(nomeP)}</div>${lista?`<div class="nota" style="margin-top:2px">${esc(lista)}</div>`:''}
     <div class="nota">${esc(escopoTxt())}${S.cidade||S.uf?' · '+esc(S.cidade?titulo(S.cidade)+(S.uf?'/'+S.uf:''):S.uf):''} · ${ls.length} lojas · ${periodoTxt()}</div></div>`;
-  if(S.prod<0) h+=`<p class="nota" style="margin:-4px 2px 10px;text-align:center">Abra <b>Filtros</b> e escolha o <b>Produto</b> para ver loja a loja só dele.</p>`;
+  if(!S.prods.length&&!S.grupos.length) h+=`<p class="nota" style="margin:-4px 2px 10px;text-align:center">Abra <b>Filtros</b> e escolha um ou mais <b>Produtos</b> (ou um <b>Grupo</b>) para ver loja a loja só deles.</p>`;
   h+=cardsTotais(tot);
-  const min=S.minRk*100;
   const cols=[colLoja,
     {t:'Venda<br>R$',s:x=>x.fat,h:x=>Rt(x.fat)},
     {t:'Venda<br>un.',s:x=>x.qv,h:x=>Q(x.qv)},
     {t:'DEV+<wbr>TRC<br>R$',s:x=>x.dt,h:x=>Rt(x.dt)},
     {t:'DEV+<wbr>TRC<br>un.',s:x=>x.qdt,h:x=>Q(x.qdt)},
     colPct()];
-  h+=`<div class="card"><h2>Lojas <span class="tag">${ls.length}</span></h2>${ls.length?`<div class="rol" style="max-height:560px">${tab('pl',cols,ls,{lim:S.limL||30,def:{c:5,d:-1},cls:'pl'})}</div>
+  h+=`<div class="card"><h2>Lojas <span class="tag">${ls.length}</span></h2>${ls.length?`<div class="rol" style="max-height:560px">${tab('pl',cols,ls,{lim:S.limL||30,def:{c:5,d:-1},cls:'pl',tr:trLojaCli})}</div>
     ${ls.length>(S.limL||30)?`<button class="mais" onclick="S.limL=(S.limL||30)+30;render()">Mostrar mais lojas</button>`:''}
-    <p class="nota">Começa pelo maior % de trocas + devoluções sobre a venda${S.minRk>0?` (quem vendeu menos de R$ ${nf0.format(S.minRk)} fica no fim)`:''}; troca/devolução sem venda no período aparece no final, como "sem venda". ${notaToque}</p>`:'<div class="vazio">Sem movimento deste produto no período.</div>'}</div>`;
+    <p class="nota">Começa pelo maior % de trocas + devoluções sobre a venda${S.minRk>0?` (quem vendeu menos de R$ ${nf0.format(S.minRk)} fica no fim)`:''}; troca/devolução sem venda no período aparece no final, como "sem venda". Toque numa loja para abrir a foto dela em Clientes (${notaVoltar}) ${notaToque}</p>`:'<div class="vazio">Sem movimento deste produto no período.</div>'}</div>`;
+  return h+rodape()+'</main>';
+}
+
+// ---------- Produção (só diretoria): venda + troca em pacotes, caixas e pães ----------
+// Produção = quantidade vendida + quantidade trocada (a troca também sai da fábrica). Caixas = pacotes ÷ pacotes por caixa (grupos.js).
+const offDt=o=>new Date(DIA0+o*864e5);
+const dm=o=>{const d=offDt(o);return String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0');};
+const dowOff=o=>(((new Date(DIA0).getUTCDay()+6+o)%7)+7)%7; // 0 = segunda
+function offMes(mi,fim){ const y=Math.floor(M.ym[mi]/100), m=M.ym[mi]%100; return Math.round(((fim?Date.UTC(y,m,0):Date.UTC(y,m-1,1))-DIA0)/864e5); }
+function offIso(iso){ const [y,m,d]=String(iso).split('-').map(Number); return Math.round((Date.UTC(y,m-1,d)-DIA0)/864e5); }
+function semanasPeriodo(){
+  const a=offMes(S.de,false), fimMes=offMes(S.ate,true), b=Math.min(fimMes,offIso(M.atualizado)); const ws=[];
+  if(b<a) return ws;
+  for(let w=a-dowOff(a);w<=b;w+=7){ const de=Math.max(w,a), ate=Math.min(w+6,b);
+    if(de>Math.min(w+4,b)) continue; // só fim de semana dentro do período: não conta como semana
+    ws.push({w,de,ate,parcial:w<a||w+4>b,lab:dm(de)+' a '+dm(ate)}); }
+  return ws;
+}
+function agregaProducao(){
+  const pm=prodMask(), vf=escopoVend();
+  const t={qv:0,qt:0,cx:0,qcad:0,qsem:0,paes:0}, porP={}, porB={}, porG={}, dias=new Set();
+  const add=(b,p,qv,qt,dia)=>{
+    const q=qv+qt, cx=M.cx[p]?q/M.cx[p]:0, pa=M.un[p]?q*M.un[p]:0;
+    t.qv+=qv;t.qt+=qt;t.cx+=cx;t.paes+=pa; if(M.cx[p]) t.qcad+=q; else t.qsem+=q;
+    const o=porP[p]||(porP[p]={p,qv:0,qt:0,cx:0,paes:0}); o.qv+=qv;o.qt+=qt;o.cx+=cx;o.paes+=pa;
+    const k=porB[b]||(porB[b]={b,qv:0,qt:0,cx:0,paes:0}); k.qv+=qv;k.qt+=qt;k.cx+=cx;k.paes+=pa;
+    const g=M.grp[p], x=porG[g]||(porG[g]={g,qv:0,qt:0,cx:0,paes:0,n:new Set()}); x.qv+=qv;x.qt+=qt;x.cx+=cx;x.paes+=pa;x.n.add(p);
+    if(dia!=null&&q>0) dias.add(dia);
+  };
+  if(PD){
+    const [dia,v,pr,qv,qt]=PD, n=dia.length, sem=S.sem;
+    for(let i=0;i<n;i++){ const mi=PDMI[i]; if(mi<S.de||mi>S.ate) continue; if(vf>=0&&v[i]!==vf) continue; const p=pr[i]; if(pm&&!pm[p]) continue;
+      const d=dia[i]; if(sem>=0&&(d<sem||d>sem+6)) continue;
+      add(sem>=0?d:d-dowOff(d),p,qv[i],qt[i],d); }
+  } else {
+    cada(S.de,S.ate,(mi,c,p,fat,qv,dev,qd,trc,qt)=>add(mi,p,qv,qt,null),{pm});
+  }
+  return {t,porP,porB,porG,dias};
+}
+function telaProducao(){
+  const semanas=PD?semanasPeriodo():[];
+  if(S.sem>=0&&!semanas.some(w=>w.w===S.sem)) S.sem=-1;
+  const extraTopo=PD?`<div class="full"><label>Semana</label><select onchange="S.sem=+this.value;S.ord={};render()"><option value="-1">Todas as semanas do período</option>${semanas.map((w,i)=>`<option ${w.w===S.sem?'selected':''} value="${w.w}">Semana ${i+1} · ${w.lab}${w.parcial?' (parcial)':''}</option>`).join('')}</select></div>`:'';
+  let h=topo('Produção',true)+'<main>'+filtrosHtml({produto:true,sem:true,extraTopo});
+  const gL=window.GRUPO_HAMB_LANCHE, gM=window.GRUPO_HAMB_MERCADO;
+  const ig=(a)=>S.prods.length===0&&S.grupos.length===a.length&&a.every(g=>S.grupos.includes(g));
+  const chip=(lab,gs)=>`<button class="${ig(gs)?'on':''}" onclick='setGrupos(${JSON.stringify(gs)})'>${lab}</button>`;
+  h+=`<div class="chips">${chip('Linha Lanche',[gL])}${chip('Linha Mercado',[gM])}${chip('Todos os hambúrgueres',[gL,gM])}${chip('Tudo',[])}</div>`;
+  if(!PD) h+=`<div class="aviso">Os dados ainda estão no formato antigo: a produção aparece só por mês. Rode a atualização do app no computador (atualizador novo) para ver por semana e por dia.</div>`;
+  const a=agregaProducao(), t=a.t, q=t.qv+t.qt;
+  const porSem=!PD?null:S.sem<0;
+  // buckets na ordem (semanas, dias da semana ou meses)
+  let buckets;
+  if(!PD) { buckets=[]; for(let i=S.de;i<=S.ate;i++) buckets.push({b:i,lab:ymLab(i,true),curto:[ymLab(i)],parcial:false}); }
+  else if(porSem) buckets=semanas.map((w,i)=>({b:w.w,lab:`Semana ${i+1}<small class="u">${w.lab}${w.parcial?' · parcial':''}</small>`,curto:['S'+(i+1),dm(w.de)],parcial:w.parcial}));
+  else { buckets=[]; const w=semanas.find(x=>x.w===S.sem); for(let d=w.de;d<=w.ate;d++) buckets.push({b:d,lab:`${DSEM[dowOff(d)]} ${dm(d)}`,curto:[DSEM[dowOff(d)],dm(d)],parcial:false}); }
+  buckets.forEach(k=>{ const x=a.porB[k.b]||{qv:0,qt:0,cx:0,paes:0}; Object.assign(k,{qv:x.qv,qt:x.qt,cx:x.cx,paes:x.paes}); });
+  if(PD&&!porSem) buckets=buckets.filter(k=>k.qv+k.qt>0||dowOff(k.b)<5); // sábado/domingo só aparecem se tiverem movimento
+  const usaCx=t.qcad>0, val=x=>usaCx?x.cx:x.qv+x.qt;
+  // médias
+  const compl=buckets.filter(k=>!k.parcial&&val(k)>0), comMov=buckets.filter(k=>val(k)>0);
+  const base=porSem?(compl.length?compl:comMov):comMov;
+  const media=base.length?base.reduce((s,k)=>s+val(k),0)/base.length:0;
+  const nDias=a.dias.size, mediaDia=nDias?(usaCx?t.cx:q)/nDias:0;
+  const un=usaCx?'caixas':'pacotes', fmtV=usaCx?Cx:Q;
+  const tituloMedia=!PD?'Média por mês':porSem?'Média por semana':'Média por dia';
+  const detMedia=!PD?`${base.length} ${base.length===1?'mês':'meses'} com produção`:porSem?(compl.length?`${compl.length} semana${compl.length>1?'s':''} completa${compl.length>1?'s':''}`:`${comMov.length} semana${comMov.length>1?'s':''} (parciais)`):`${comMov.length} dia${comMov.length>1?'s':''} com produção`;
+  h+=`<div class="card cab-cli"><div style="font-weight:800;font-size:17px">${esc(txtProdutos(false))}</div>
+    <div class="nota">${U.perfil==='dir'&&escopoVend()>=0?esc(nomeVend(escopoVend())):'Empresa toda'} · ${periodoTxt()}${S.sem>=0?' · semana '+esc(semanas.find(x=>x.w===S.sem).lab):''}</div></div>`;
+  h+=`<div class="kpis">
+    <div class="kpi wide"><div class="rot">${usaCx?'Caixas produzidas':'Pacotes produzidos'}</div><div class="val">${fmtV(usaCx?t.cx:q)}</div><div class="det">${Q(q)} pacotes${t.paes?' · '+Q(t.paes)+' pães':''}</div></div>
+    <div class="kpi lar"><div class="rot">${tituloMedia}</div><div class="val">${fmtV(media)}</div><div class="det">${un} · ${detMedia}</div></div>
+    ${PD&&S.sem>=0?`<div class="kpi"><div class="rot">Dias com produção</div><div class="val">${nDias}</div><div class="det">na semana escolhida</div></div>`
+      :`<div class="kpi"><div class="rot">Média por dia</div><div class="val">${PD?fmtV(mediaDia):'–'}</div><div class="det">${PD?`${un} · ${nDias} dias com produção`:'precisa do atualizador novo'}</div></div>`}
+    <div class="kpi"><div class="rot">Venda</div><div class="val">${Q(t.qv)}</div><div class="det">pacotes vendidos</div></div>
+    <div class="kpi"><div class="rot">Troca</div><div class="val">${Q(t.qt)}</div><div class="det">pacotes repostos</div></div>
+  </div>`;
+  if(t.qsem>0&&usaCx) h+=`<div class="aviso">${Q(t.qsem)} pacotes de produtos sem cadastro de caixa não entram na conta de caixas e pães (só nos pacotes). Para ver só hambúrguer, use os botões acima.</div>`;
+  if(!q){ h+='<div class="card vazio">Sem produção para estes filtros.</div>'; return h+rodape()+'</main>'; }
+  h+=`<div class="card"><h2>${usaCx?'Caixas':'Pacotes'} por ${!PD?'mês':porSem?'semana':'dia'}</h2><div class="graf"><canvas id="gP"></canvas></div><p class="nota">Linha tracejada laranja = ${tituloMedia.toLowerCase()} (${fmtV(media)} ${un}).${porSem&&buckets.some(k=>k.parcial)?' Semanas parciais (que começam ou terminam fora do período) não entram na média.':''}</p></div>`;
+  window._grafP={labs:buckets.map(k=>k.curto),vals:buckets.map(k=>+val(k).toFixed(1)),media,usaCx};
+  const colsB=[{t:!PD?'Mês':porSem?'Semana':'Dia',cls:'nome l',s:x=>x.b,asc:1,h:x=>x.lab},
+    {t:'Venda<br>pct',s:x=>x.qv,h:x=>Q(x.qv)},{t:'Troca<br>pct',s:x=>x.qt,h:x=>Q(x.qt)},{t:'Total<br>pct',s:x=>x.qv+x.qt,h:x=>`${Q(x.qv+x.qt)}${x.paes?`<small class="u">${Q(x.paes)} pães</small>`:''}`},
+    {t:'Caixas',s:x=>x.cx,h:x=>usaCx?`<b>${Cx(x.cx)}</b>`:'–'}];
+  const foot=['Total',Q(t.qv),Q(t.qt),`${Q(q)}${t.paes?`<small class="u">${Q(t.paes)} pães</small>`:''}`,usaCx?Cx(t.cx):'–'];
+  h+=`<div class="card"><h2>${!PD?'Mês a mês':porSem?'Semana a semana':'Dia a dia'}</h2><div class="rol">${tab('prB',colsB,buckets,{def:{c:0,d:1},cls:'pl',foot})}</div></div>`;
+  const gs=Object.values(a.porG);
+  if(gs.length>1){
+    const colsG=[{t:'Grupo',txt:1,cls:'nome l',s:x=>x.g,h:x=>`${esc(x.g)}<small>${x.n.size} produto${x.n.size>1?'s':''}</small>`},
+      {t:'Total<br>pct',s:x=>x.qv+x.qt,h:x=>Q(x.qv+x.qt)},{t:'Pães',s:x=>x.paes,h:x=>x.paes?Q(x.paes):'–'},{t:'Caixas',s:x=>x.cx,h:x=>x.cx?`<b>${Cx(x.cx)}</b>`:'–'}];
+    h+=`<div class="card"><h2>Por grupo</h2><div class="rol">${tab('prG',colsG,gs.sort((x,y)=>y.cx-x.cx||(y.qv+y.qt)-(x.qv+x.qt)),{def:{c:3,d:-1},cls:'pl'})}</div></div>`;
+  }
+  const ps=Object.values(a.porP).filter(x=>x.qv||x.qt).sort((x,y)=>y.cx-x.cx||(y.qv+y.qt)-(x.qv+x.qt));
+  const infoCad=p=>{const c=M.cad[p]; return c?`${c[3]} pct/caixa · ${c[2]} pães/pct`:'sem cadastro de caixa';};
+  const colsP=[{t:'Produto',txt:1,cls:'nome l',s:x=>titulo(M.prod[x.p][0]),h:x=>`${esc(titulo(M.prod[x.p][0]))}<small>${esc(infoCad(x.p))}</small>`},
+    {t:'Venda<br>pct',s:x=>x.qv,h:x=>Q(x.qv)},{t:'Troca<br>pct',s:x=>x.qt,h:x=>Q(x.qt)},{t:'Total<br>pct',s:x=>x.qv+x.qt,h:x=>`${Q(x.qv+x.qt)}${x.paes?`<small class="u">${Q(x.paes)} pães</small>`:''}`},
+    {t:'Caixas',s:x=>M.cx[x.p]?x.cx:null,h:x=>M.cx[x.p]?`<b>${Cx(x.cx)}</b>`:'–'}];
+  h+=`<div class="card"><h2>Produto a produto <span class="tag">${ps.length}</span></h2><div class="rol" style="max-height:560px">${tab('prP',colsP,ps,{def:{c:4,d:-1},cls:'pl',foot})}</div>
+    <p class="nota">Produção = venda + troca (a troca também sai da fábrica; devolução não entra). Caixas = pacotes ÷ pacotes por caixa do cadastro. ${notaToque}</p></div>`;
+  return h+rodape()+'</main>';
+}
+function grafProducao(){
+  const g=window._grafP, el=document.getElementById('gP'); if(!g||!el) return;
+  const muitos=g.labs.length>8, tam=g.labs.length>16?9.5:g.labs.length>8?10.5:12;
+  const fmt=v=>g.usaCx?Cx(v):fmtMi(v);
+  Chart.defaults.font.family='"Nunito Sans", system-ui, sans-serif'; Chart.defaults.color='#5E6B66';
+  charts.push(new Chart(el,{type:'bar',plugins:[rotulos],data:{labels:g.labs,datasets:[
+      {type:'bar',data:g.vals,backgroundColor:'#026E57',borderRadius:6,maxBarThickness:46,order:2,rot:{fmt,size:tam,cor:'#014D3D',vertical:muitos,tipo:'bar'}},
+      {type:'line',data:g.labs.map(()=>g.media),borderColor:'#FD9B02',borderDash:[6,5],pointRadius:0,borderWidth:2,order:1}]},
+    options:{animation:false,maintainAspectRatio:false,layout:{padding:{top:muitos?4:22}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.datasetIndex?'Média '+fmt(c.raw):fmt(c.raw)+(g.usaCx?' caixas':' pacotes')}}},
+      scales:{y:{beginAtZero:true,grace:'8%',ticks:{callback:v=>fmt(v),maxTicksLimit:6},grid:{color:'#EEE9DD'}},x:{grid:{display:false}}}}}));
+}
+
+// ---------- conferência dos grupos de produto (só diretoria) ----------
+function telaGrupos(){
+  const pg={}; M.prod.forEach((p,i)=>{ (pg[M.grp[i]]||(pg[M.grp[i]]=[])).push(i); });
+  const gs=Object.keys(pg).sort((a,b)=>(b===window.GRUPO_HAMB_SEM)-(a===window.GRUPO_HAMB_SEM)||ordGrupo(a,b));
+  const sem=pg[window.GRUPO_HAMB_SEM]||[];
+  let h=topo('Grupos de produto',true)+'<main>';
+  h+=`<p class="nota" style="margin:0 2px 10px">Como cada produto da base foi agrupado. Hambúrguer: pela coluna Linha do cadastro (Lanche / Mercado). Os demais: pelo nome. Para corrigir, mande a lista para a Controladoria ajustar o arquivo <b>grupos.js</b>.</p>`;
+  if(sem.length) h+=`<div class="aviso"><b>${sem.length} hambúrguer${sem.length>1?'es':''} sem linha no cadastro</b> — informe se é Linha Lanche ou Linha Mercado (e pacotes por caixa / pães por pacote).</div>`;
+  h+=`<div class="card grp">${gs.map(g=>`<h3><span>${esc(g)}</span><span class="tag">${pg[g].length}</span></h3><ul>${pg[g].sort(ordNome).map(i=>`<li>${esc(titulo(M.prod[i][0]))} <small>· cód. ${esc(M.prod[i][1])}${M.cad[i]?` · ${M.cad[i][3]} pct/cx · ${M.cad[i][2]} pães/pct`:''}</small></li>`).join('')}</ul>`).join('')}</div>`;
   return h+rodape()+'</main>';
 }
 
