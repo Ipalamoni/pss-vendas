@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#026E57">
 <meta name="color-scheme" content="light dark">
-<script>(function(){var t="auto";try{t=localStorage.getItem("pss-tema")||"auto"}catch(e){}var e=t==="auto"?(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro"):t;document.documentElement.setAttribute("data-tema",e);if(e==="escuro"){var m=document.querySelector("meta[name=theme-color]");if(m)m.content="#0B3B30";}})();</script>
+<script>(function(){var t="auto";try{t=localStorage.getItem("pss-tema")||"auto"}catch(e){}var e=t==="auto"?(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro"):t;document.documentElement.setAttribute("data-tema",e);if(e==="escuro"){var m=document.querySelector("meta[name=theme-color]");if(m)m.content="#1F1E1D";}})();</script>
 <title>PSS Vendas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet">
@@ -22,28 +22,29 @@
 <script src="grupos.js"></script>
 <style>
 /* v10: cores em variáveis — tema claro (padrão) e escuro (segue o celular/computador ou a escolha no menu) */
+/* v11: cores em variáveis. Claro = creme da PSS; escuro = cinza neutro (sem fundos verdes). Verde e laranja da PSS só em destaques. */
 :root{
   color-scheme:light;
   --laranja:#FD9B02; --laranja-esc:#C97A00; --laranja-claro:#FFF3DC;
   --verde:#026E57; --verde-forte:#026E57; --verde-esc:#014D3D; --verde-claro:#E3F2EE;
   --fundo:#F7F4EC; --card:#FFFFFF; --campo:#FFFFFF; --texto:#1E2A26; --sub:#5E6B66; --linha:#E6E1D5;
-  --ruim:#C4372B; --ruim-claro:#FCE9E7; --bom:#1A7A50;
-  --topo:#026E57; --neutro:var(--neutro); --abas:var(--abas); --th:var(--th); --th-borda:var(--th-borda); --th-on:var(--th-on); --th-ativo:var(--th-ativo);
-  --tfoot:var(--tfoot); --tot:var(--tot); --toque:var(--toque); --desab:var(--desab); --desab-txt:#8D9792; --mz:var(--mz); --ico-ord:var(--ico-ord);
-  --vd:#66756F; --tag-txt:var(--tag-txt); --aviso-txt:var(--aviso-txt); --sombra:var(--sombra); --veu:var(--veu); --logo-fundo:transparent;
-  --barra:#026E57; --rot-barra:#014D3D; --dentro-barra:#FFFFFF; --rot-lar:#8A5400; --grade:var(--neutro); --foco:#FD9B02;
-  --raio:16px;
+  --ruim:#C4372B; --ruim-claro:#FCE9E7; --ruim-borda:#F2C9C4; --bom:#1A7A50;
+  --topo:#026E57; --topo-borda:transparent; --neutro:#EEEBE3; --abas:#ECE8DE; --th:#E6EAE7; --th-borda:#CFD8D3; --th-on:#D6E4DD; --th-ativo:#D6E4DD;
+  --tfoot:#EEF2EF; --tot:#F3F5F3; --toque:#F1EEE6; --desab:#F1EFEA; --desab-txt:#8D9792; --mz:#9AA5A0; --ico-ord:#8D9792;
+  --vd:#66756F; --tag-txt:#8A5400; --aviso-txt:#6B4300; --sombra:rgba(30,42,38,.09); --veu:rgba(20,25,23,.45);
+  --barra:#026E57; --rot-barra:#014D3D; --dentro-barra:#FFFFFF; --rot-lar:#8A5400; --grade:#ECE8DE; --foco:#FD9B02;
+  --raio:16px; --larg:760px;
 }
 [data-tema="escuro"]{
   color-scheme:dark;
-  --laranja:#FDA526; --laranja-esc:#FDB54D; --laranja-claro:#3A2C12;
-  --verde:#4CC9A4; --verde-forte:#0B7A60; --verde-esc:#8EE0C6; --verde-claro:#183A31;
-  --fundo:#0D1613; --card:#15221E; --campo:#1B2A25; --texto:#E6EEEA; --sub:#A6B5AE; --linha:#2A3B35;
-  --ruim:#FF8A7D; --ruim-claro:#3A1F1C; --bom:#5BD6A0;
-  --topo:#0B4D3E; --neutro:#22332D; --abas:#1A2824; --th:#1E2F29; --th-borda:#34493F; --th-on:#244539; --th-ativo:#2A3F37;
-  --tfoot:#1A2B26; --tot:#192824; --toque:#22332D; --desab:#18241F; --desab-txt:#6F807A; --mz:#4D5F58; --ico-ord:#61766E;
-  --vd:#93A69E; --tag-txt:#FFD08A; --aviso-txt:#FFD08A; --sombra:var(--veu); --veu:rgba(0,0,0,.6); --logo-fundo:#F7F4EC;
-  --barra:#2FA383; --rot-barra:#BDEBDC; --dentro-barra:#062019; --rot-lar:#FFC266; --grade:#24352F; --foco:#FDA526;
+  --laranja:#FDA526; --laranja-esc:#FDB54D; --laranja-claro:#3B3124;
+  --verde:#4EC9A0; --verde-forte:#026E57; --verde-esc:#7FD8BA; --verde-claro:#2D3A35;
+  --fundo:#262624; --card:#30302E; --campo:#383835; --texto:#F5F4EF; --sub:#B4B2A9; --linha:#454540;
+  --ruim:#FF8A7D; --ruim-claro:#3E2C29; --ruim-borda:#6A3A33; --bom:#5BD6A0;
+  --topo:#1F1E1D; --topo-borda:#3A3936; --neutro:#3E3D3A; --abas:#2A2A28; --th:#3A3A36; --th-borda:#4D4C46; --th-on:#43423D; --th-ativo:#43423D;
+  --tfoot:#353532; --tot:#343431; --toque:#3A3936; --desab:#2E2E2C; --desab-txt:#7D7B74; --mz:#6F6D66; --ico-ord:#8A8880;
+  --vd:#A3A199; --tag-txt:#FFD08A; --aviso-txt:#FFD08A; --sombra:rgba(0,0,0,.35); --veu:rgba(0,0,0,.6);
+  --barra:#3FAF8A; --rot-barra:#CFEFE3; --dentro-barra:#10241D; --rot-lar:#FFC266; --grade:#3A3936; --foco:#FDA526;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--fundo);color:var(--texto);font-family:"Nunito Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:16px}
@@ -201,11 +202,9 @@ table.mtz .pct{padding:2px 4px;font-size:12px}
 :focus{outline:none}
 :focus-visible{outline:3px solid var(--foco);outline-offset:2px;border-radius:10px}
 td,.val,.kpi .val,.mtz td{font-variant-numeric:tabular-nums}
-[data-tema="escuro"] input[type=search].lupa,[data-tema="escuro"] .ms input[type=search]{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234CC9A4' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E")}
-[data-tema="escuro"] .marcas{background:var(--logo-fundo);border-radius:18px;padding:10px 14px}
-[data-tema="escuro"] .rodape .por img{background:var(--logo-fundo);border-radius:6px;padding:2px 6px;box-sizing:content-box}
+[data-tema="escuro"] input[type=search].lupa,[data-tema="escuro"] .ms input[type=search]{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234EC9A0' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E")}
 [data-tema="escuro"] .menu button,[data-tema="escuro"] .kpi,[data-tema="escuro"] .card{box-shadow:0 0 0 1px var(--linha)}
-[data-tema="escuro"] .kpi.ruim{box-shadow:0 0 0 1px #5A2A25}
+[data-tema="escuro"] .kpi.ruim{box-shadow:0 0 0 1px var(--ruim-borda)}
 main > .marcas{max-width:330px;margin:2px auto 6px}
 main > .marcas .pss{max-width:190px}
 main > .marcas .pal{max-width:104px}
@@ -218,6 +217,47 @@ main > .marcas .pal{max-width:104px}
 .ov .box > button.b-sec{background:var(--neutro);color:var(--texto)}
 .ms .rodms .b-prim{background:var(--verde-forte);color:#fff}
 .ms .rodms .b-sec{background:var(--neutro);color:var(--texto)}
+/* v11: layout — barra alinhada ao conteúdo; computador usa a largura da tela */
+.topo{padding-left:max(12px,calc((100% - var(--larg))/2 + 14px));padding-right:max(12px,calc((100% - var(--larg))/2 + 14px));border-bottom:1px solid var(--topo-borda)}
+main{max-width:var(--larg)}
+.btn-voltar{display:flex;align-items:center;justify-content:center;padding:0}
+.btn-voltar svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.card h2{letter-spacing:-.1px}
+.kpi .val{letter-spacing:-.4px}
+.menu button{transition:transform .12s,box-shadow .12s}
+@media (hover:hover){
+  .menu button:hover{box-shadow:0 4px 14px var(--sombra),0 0 0 1px var(--linha);transform:translateY(-1px)}
+  tr.click:hover td{background:var(--toque)}
+  .chips button:hover,.atalhos button:hover,.mais:hover{background:var(--verde-claro)}
+  .chips button.on:hover,.atalhos button.on:hover{background:var(--verde-forte)}
+  table.ord th:hover{background:var(--th-ativo)}
+}
+@media (min-width:900px){
+  :root{--larg:1160px}
+  main{padding:20px 24px 48px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .kpi.wide{grid-column:auto}
+  .kpi{padding:16px}
+  .kpi .val{font-size:26px}
+  .menu{grid-template-columns:repeat(3,1fr)}
+  .menu button{min-height:120px}
+  .fcorpo .filtros{grid-template-columns:repeat(4,1fr);gap:10px 12px}
+  .fcorpo .filtros > .full:not(.atalhos):not(.dica){grid-column:auto}
+  .limpar{grid-column:4;justify-self:stretch}
+  .graf{height:320px}
+  .card{padding:18px 20px}
+  .rol{max-height:620px}
+  .mtzw{max-height:680px}
+  td.nome{max-width:none}
+  table.pl td.nome{max-width:none}
+  table{font-size:14px}
+  .ov.on{align-items:center}
+  .ov .box{border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  main > .marcas{max-width:380px}
+  main > .marcas .pss{max-width:220px}
+  main > .marcas .pal{max-width:120px}
+  .ola{font-size:22px}
+}
 @media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}.fcab .seta{transition:none}}
 </style>
 </head>
@@ -238,9 +278,10 @@ main > .marcas .pal{max-width:104px}
 </div></div>
 <div class="ov" id="ms" onclick="if(event.target===this)fecharMulti()"><div class="box ms" id="msBox" role="dialog" aria-modal="true"></div></div>
 <script>
-const LOGO_SRC='logo.png', LOGO_PAL='palamoni.png';
-const marcas=()=>`<div class="marcas"><img class="pss" src="${LOGO_SRC}" alt="Pães São Sebastião"><img class="pal" src="${LOGO_PAL}" alt="Palamoni Consultoria"></div>`;
-const rodape=()=>`<div class="rodape"><div class="por">Uma solução <img src="${LOGO_PAL}" alt="Palamoni Consultoria Empresarial"></div>© ${new Date().getFullYear()} Palamoni Consultoria Empresarial · uso licenciado à Pães São Sebastião</div>`;
+const escuro=()=>document.documentElement.getAttribute('data-tema')==='escuro';
+const logoPss=()=>escuro()?'logo-escuro.png':'logo.png', logoPal=()=>escuro()?'palamoni-escuro.png':'palamoni.png';
+const marcas=()=>`<div class="marcas"><img class="pss" src="${logoPss()}" alt="Pães São Sebastião"><img class="pal" src="${logoPal()}" alt="Palamoni Consultoria"></div>`;
+const rodape=()=>`<div class="rodape"><div class="por">Uma solução <img src="${logoPal()}" alt="Palamoni Consultoria Empresarial"></div>© ${new Date().getFullYear()} Palamoni Consultoria Empresarial · uso licenciado à Pães São Sebastião</div>`;
 const DIRETORIA=['Ithalo Palamoni','Moisés','Leonardo Mijoler','Eduardo Mijoler'];
 // [nome completo, Nome do Colaborador na base, nome curto]
 const VENDEDORES=[
@@ -547,7 +588,7 @@ function abrirProd(p){ abrirDetalhe('prodloja',{prods:[p]}); }
 
 function topo(t,voltarBtn){
   const ini=U.nome.split(' ').map(s=>s[0]).slice(0,2).join('');
-  return `<div class="topo">${voltarBtn?`<button class="btn-voltar" aria-label="Voltar" onclick="voltar()">‹</button>`:''}<h1>${t}</h1><button class="chip-user" aria-label="Menu de ${esc(U.nome)}: aparência e trocar de usuário" aria-haspopup="dialog" onclick="abrirOv()">${esc(ini)} ▾</button></div>`;
+  return `<div class="topo">${voltarBtn?`<button class="btn-voltar" aria-label="Voltar" onclick="voltar()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>`:''}<h1>${t}</h1><button class="chip-user" aria-label="Menu de ${esc(U.nome)}: aparência e trocar de usuário" aria-haspopup="dialog" onclick="abrirOv()">${esc(ini)} ▾</button></div>`;
 }
 function abrirOv(){ document.getElementById('ovNome').textContent=U.nome; document.getElementById('ovPerfil').textContent=U.perfil==='dir'?'Diretoria — vê todos os vendedores':U.perfil==='ger'?'Gestor — '+regiaoTxt()+', todos os vendedores':'Vendedor — vê só os próprios dados'; document.getElementById('ov').classList.add('on'); marcarTema(); setTimeout(()=>{ const b=document.querySelector('#ov .tema button.on'); if(b) b.focus(); },30); }
 function fecharOv(){ document.getElementById('ov').classList.remove('on'); }
@@ -801,7 +842,7 @@ const mqEscuro=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):null
 function aplicarTema(){
   const p=temaPref(), t=p==='auto'?(mqEscuro&&mqEscuro.matches?'escuro':'claro'):p;
   document.documentElement.setAttribute('data-tema',t);
-  const m=document.querySelector('meta[name=theme-color]'); if(m) m.content=t==='escuro'?'#0B3B30':'#026E57';
+  const m=document.querySelector('meta[name=theme-color]'); if(m) m.content=t==='escuro'?'#1F1E1D':'#026E57';
   lerCores();
 }
 function marcarTema(){ const p=temaPref(); document.querySelectorAll('#ov .tema button').forEach(b=>{ const on=b.dataset.t===p; b.classList.toggle('on',on); b.setAttribute('aria-checked',on); }); }
@@ -815,7 +856,7 @@ document.addEventListener('keydown',e=>{
   const t=e.target; if((e.key==='Enter'||e.key===' ')&&t&&t.matches&&t.matches('[data-tecla]')){ e.preventDefault(); t.click(); }
 });
 function acessivel(){ document.querySelectorAll('table.ord th,tr.click').forEach(el=>{ el.tabIndex=0; el.dataset.tecla=1; if(el.tagName==='TH') el.setAttribute('role','button'); }); }
-const fmtMi=v=>v>=1e6?nf1.format(v/1e6)+' mi':v>=1e3?nf0.format(v/1e3)+' mil':nf0.format(v);
+const fmtMi=v=>v>=1e6?nf1.format(v/1e6)+' mi':v>=1e4?nf0.format(v/1e3)+' mil':v>=1e3?nf1.format(v/1e3).replace(',0','')+' mil':nf0.format(v);
 
 // ---------- telas ----------
 function render(){
