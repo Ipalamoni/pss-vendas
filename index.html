@@ -284,6 +284,7 @@ main{max-width:var(--larg)}
     <button type="button" role="radio" data-t="escuro" onclick="setTema('escuro')">Escuro</button>
   </div>
   <p class="tema-dica">Automático segue o tema claro ou escuro do celular ou do computador.</p>
+  <button type="button" class="b-sec" id="ovProm" style="display:none" onclick="fecharOv();ir('promotoras')">Promotoras (importar planilha)</button>
   <button type="button" class="b-prim" onclick="sair()">Trocar de usuário</button>
   <button type="button" class="b-sec" onclick="fecharOv()">Fechar</button>
 </div></div>
@@ -339,10 +340,11 @@ const semAcento=s=>String(s).normalize('NFKD').replace(/[̀-ͯ]/g,'').toUpperCas
 function slugLogin(t){return String(t).normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'.').replace(/^\.+|\.+$/g,'');}
 function usuarioDaSessao(sess){
   const m=(sess&&sess.user&&sess.user.app_metadata)||{};
-  if(m.perfil!=='dir'&&m.perfil!=='vend'&&m.perfil!=='ger') return null;
+  if(!['dir','vend','ger','prom'].includes(m.perfil)) return null;
   return {nome:m.nome||'Usuário',perfil:m.perfil,colab:m.colab||'',arquivo:m.arquivo||'',regiao:m.regiao||''};
 }
 // perfis: dir = diretoria (tudo + Produção); ger = gestor (todos os vendedores de uma região, sem custo/impostos/margem); vend = vendedor (só os próprios)
+const ehProm=()=>U&&U.perfil==='prom';             // promotor(a): só as lojas da lista dele(a), todos os vendedores dessas lojas
 const verTodos=()=>U.perfil!=='vend';            // vê todos os vendedores (filtro de vendedor)
 const verFin=()=>U.perfil==='dir';               // vê impostos, custo, receita líquida, margem, bonificação
 const verProd=()=>U.perfil==='dir';              // card Produção (só diretoria: Ithalo, Leonardo, Eduardo)
@@ -357,7 +359,7 @@ async function gunzipJson(blob){
   return JSON.parse(pako.ungzip(new Uint8Array(await blob.arrayBuffer()),{to:'string'}));
 }
 async function carregarDados(){
-  const caminho=U.perfil==='dir'?'dir/dados.json.gz':U.perfil==='ger'?'ger/'+U.arquivo+'.json.gz':'vend/'+U.arquivo+'.json.gz';
+  const caminho=U.perfil==='dir'?'dir/dados.json.gz':U.perfil==='ger'?'ger/'+U.arquivo+'.json.gz':U.perfil==='prom'?'prom/'+U.arquivo+'.json.gz':'vend/'+U.arquivo+'.json.gz';
   const {data,error}=await SB.storage.from('dados').download(caminho+'?t='+Date.now());
   if(error) throw new Error('download: '+(error.message||error));
   const j=await gunzipJson(data);
@@ -589,7 +591,7 @@ window.addEventListener('popstate',e=>{
   if(pagina()!==telaAtual) entrouTela(pagina());
 });
 window.addEventListener('hashchange',()=>{ if(U&&M&&pagina()!==telaAtual) entrouTela(pagina()); });
-function pagina(){ const h=location.hash.replace('#',''); if(h==='producao') return U&&M&&verProd()?h:'inicio'; if(h==='grupos') return U&&verTodos()?h:'inicio'; return ['vendas','clientes','ranking','produtos','prodloja','vendedor'].includes(h)?h:'inicio'; }
+function pagina(){ const h=location.hash.replace('#',''); if(h==='producao') return U&&M&&verProd()?h:'inicio'; if(h==='grupos') return U&&verTodos()?h:'inicio'; if(h==='promotoras') return U&&M&&ehAdmin()?h:'inicio'; return ['vendas','clientes','ranking','produtos','prodloja','vendedor'].includes(h)?h:'inicio'; }
 // aberturas
 function abrirLoja(c){ abrirDetalhe(pagina(),{rede:M.cr[c],loja:c,busca:''}); }
 function abrirLojaCli(c){ abrirDetalhe('clientes',{rede:M.cr[c],loja:c,busca:''}); }
@@ -601,7 +603,7 @@ function topo(t,voltarBtn){
   const ini=U.nome.split(' ').map(s=>s[0]).slice(0,2).join('');
   return `<div class="topo">${voltarBtn?`<button class="btn-voltar" aria-label="Voltar" onclick="voltar()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>`:''}<h1>${t}</h1>${btnTema()}<button class="chip-user" aria-label="Menu de ${esc(U.nome)}: aparência e trocar de usuário" aria-haspopup="dialog" onclick="abrirOv()">${esc(ini)} ▾</button></div>`;
 }
-function abrirOv(){ document.getElementById('ovNome').textContent=U.nome; document.getElementById('ovPerfil').textContent=U.perfil==='dir'?'Diretoria — vê todos os vendedores':U.perfil==='ger'?'Gestor — '+regiaoTxt()+', todos os vendedores':'Vendedor — vê só os próprios dados'; document.getElementById('ov').classList.add('on'); marcarTema(); setTimeout(()=>{ const b=document.querySelector('#ov .tema button.on'); if(b) b.focus(); },30); }
+function abrirOv(){ document.getElementById('ovNome').textContent=U.nome; document.getElementById('ovPerfil').textContent=U.perfil==='dir'?'Diretoria — vê todos os vendedores':U.perfil==='ger'?'Gestor — '+regiaoTxt()+', todos os vendedores':ehProm()?'Promotor(a) — vê só as lojas que atende':'Vendedor — vê só os próprios dados'; document.getElementById('ovProm').style.display=ehAdmin()?'':'none'; document.getElementById('ov').classList.add('on'); marcarTema(); setTimeout(()=>{ const b=document.querySelector('#ov .tema button.on'); if(b) b.focus(); },30); }
 function fecharOv(){ document.getElementById('ov').classList.remove('on'); }
 async function sair(){ fecharOv(); try{await SB.auth.signOut()}catch(e){} U=null; M=null; DET={}; PD=null; PILHA=[]; telaAtual=null; history.replaceState(null,'',location.pathname); render(); }
 
@@ -910,6 +912,7 @@ function render(){
   if(p==='vendedor'){ app.innerHTML=telaVV(); grafVV(); }
   if(p==='producao'){ app.innerHTML=telaProducao(); aplicarFiltros(); grafProducao(); }
   if(p==='grupos'){ app.innerHTML=telaGrupos(); }
+  if(p==='promotoras'){ app.innerHTML=telaPromotoras(); if(PR.lista===null&&!PR.ocupado) carregarPromotoras(); }
   acessivel();
 }
 
@@ -951,7 +954,7 @@ function telaInicio(){
   else ant=resumo(mi-1,mi-1);
   const du=diasUteis(mi), media=du?t.fat/du:0;
   const varF=ant.fat?(t.fat/ant.fat-1)*100:NaN, varP=t.pct-ant.pct;
-  const esc2=verTodos()?(S.vends.length===1?'Vendedor: '+nomeVend(S.vends[0]):S.vends.length?'Visão: '+S.vends.length+' vendedores':'Visão: '+(U.regiao?regiaoTxt():'empresa toda')):'Seus clientes';
+  const esc2=verTodos()?(S.vends.length===1?'Vendedor: '+nomeVend(S.vends[0]):S.vends.length?'Visão: '+S.vends.length+' vendedores':(ehProm()?'Suas lojas'+(M.promotora?' ('+M.promotora.lojas+')':''):'Visão: '+(U.regiao?regiaoTxt():'empresa toda'))):'Seus clientes';
   const atual=new Date(M.atualizado+'T12:00:00').toLocaleDateString('pt-BR');
   const btn=(id,txt,svg,cls)=>`<button ${cls?`class="${cls}"`:''} onclick="ir('${id}')"><div class="ic"><svg viewBox="0 0 24 24">${svg}</svg></div>${txt}</button>`;
   const dir=verProd();
@@ -984,6 +987,110 @@ function telaInicio(){
 }
 // manutenção (só o administrador): lista de todos os produtos com o cadastro de embalagem, para completar no Excel
 const ehAdmin=()=>U&&U.perfil==='dir'&&U.arquivo==='ithalo';
+// ---------- Promotoras (só administrador): importar a planilha "Dados" e criar/ajustar logins pelo serviço do Supabase ----------
+// Regras (serviço "promotoras"): planilha = verdade. Promotora que já existe: só as lojas mudam (login e senha não mudam).
+// Nova: login = primeiro nome (se já existir ou repetir: primeiro + segundo nome; sem segundo: + região); senha = primeiro nome + 4 números.
+// Quem sai da planilha é bloqueado. Os arquivos de cada promotora são refeitos na hora e depois de cada atualização (agendamento a cada 20 min).
+const PR={lista:null,ocupado:'',erro:'',linhas:null,arquivo:'',checa:null,previa:null,resultado:null};
+async function fnProm(body){
+  const {data:{session}}=await SB.auth.getSession();
+  const r=await fetch(CFG.url+'/functions/v1/promotoras',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.chave,Authorization:'Bearer '+(session&&session.access_token)},body:JSON.stringify(body)});
+  let j={}; try{ j=await r.json(); }catch(e){}
+  if(!j.ok) throw new Error(j.erro||('o serviço respondeu '+r.status));
+  return j;
+}
+async function carregarPromotoras(){ PR.ocupado='Carregando a lista…'; render();
+  try{ PR.lista=await fnProm({acao:'listar'}); PR.erro=''; }catch(e){ PR.erro=e.message; PR.lista={promotoras:[]}; }
+  PR.ocupado=''; if(pagina()==='promotoras') render(); }
+function carregaXLSX(){ return window.XLSX?Promise.resolve():new Promise((ok,ruim)=>{ const sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; sc.onload=ok; sc.onerror=()=>ruim(new Error('não consegui baixar o leitor de Excel (verifique a internet)')); document.head.appendChild(sc); }); }
+const chaveTxt=t=>String(t??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+async function lerPlanilhaProm(inp){
+  const f=inp.files&&inp.files[0]; if(!f) return;
+  Object.assign(PR,{ocupado:'Lendo a planilha…',erro:'',linhas:null,checa:null,previa:null,resultado:null,arquivo:f.name}); render();
+  try{
+    await carregaXLSX();
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+    const nomeAba=wb.SheetNames.find(n=>chaveTxt(n)==='DADOS')||wb.SheetNames[0];
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[nomeAba],{header:1,defval:'',raw:true});
+    const iCab=rows.findIndex(r=>r.some(c=>chaveTxt(c).includes('PROMOTOR'))&&r.some(c=>chaveTxt(c).includes('CODIGO')));
+    if(iCab<0) throw new Error(`não achei o cabeçalho na aba "${nomeAba}" (precisa ter as colunas "Nome da promotora" e "Código da loja").`);
+    const cab=rows[iCab].map(chaveTxt), col=t=>cab.findIndex(c=>c.includes(t));
+    const ix={regiao:col('REGIAO'),nome:col('PROMOTOR'),loja:col('LOJA ATENDIDA'),codigo:col('CODIGO'),numero:col('NUMERO')};
+    if(ix.loja<0) ix.loja=cab.findIndex((c,i)=>c.includes('LOJA')&&i!==ix.codigo&&i!==ix.numero);
+    const linhas=rows.slice(iCab+1).map(r=>({regiao:ix.regiao>=0?r[ix.regiao]:'',nome:String(r[ix.nome]||'').trim(),loja:ix.loja>=0?r[ix.loja]:'',codigo:String(r[ix.codigo]??'').trim().replace(/\.0+$/,''),numero:ix.numero>=0?String(r[ix.numero]??''):''})).filter(l=>l.nome&&l.codigo);
+    if(!linhas.length) throw new Error('a planilha não tem linhas com nome da promotora e código da loja.');
+    // conferência com a base de vendas (arquivo da diretoria tem todas as lojas)
+    const porCod=new Map(M.cli.map((c,i)=>[String(c[3]).trim(),i]));
+    const naoAchadas=[], divergentes=[], donos=new Map();
+    for(const l of linhas){ const i=porCod.get(l.codigo); const d=donos.get(l.codigo)||new Set(); d.add(l.nome); donos.set(l.codigo,d);
+      if(i===undefined){ naoAchadas.push(l); continue; }
+      const p1=chaveTxt(l.loja).replace(/^(SUP|SUPERMERCADO|SUPERMERCADOS|MERCADO|LOJA)\s+/,'').split(' ')[0].slice(0,4), base=chaveTxt(M.cli[i][0]+' '+M.cli[i][1]+' '+M.cli[i][2]);
+      if(p1&&!base.includes(p1)) divergentes.push({...l,base:M.cli[i][0]+(M.cli[i][1]&&M.cli[i][1]!=='SEM REDE'?' · '+M.cli[i][1]:'')}); }
+    const dupla=[...donos].filter(([c,n])=>n.size>1).map(([c,n])=>({codigo:c,nomes:[...n],loja:(linhas.find(l=>l.codigo===c)||{}).loja}));
+    PR.linhas=linhas; PR.checa={naoAchadas,divergentes,dupla,aba:nomeAba,pessoas:new Set(linhas.map(l=>chaveTxt(l.nome))).size};
+    PR.ocupado='Conferindo com os logins atuais…'; render();
+    PR.previa=await fnProm({acao:'importar',simular:true,linhas});
+  }catch(e){ PR.erro=e.message; }
+  PR.ocupado=''; inp.value=''; render();
+}
+async function confirmarProm(){
+  if(!PR.linhas) return;
+  PR.ocupado='Gravando: criando logins, ajustando lojas e gerando os arquivos (pode levar até 1 minuto)…'; render();
+  try{ PR.resultado=await fnProm({acao:'importar',linhas:PR.linhas}); PR.previa=null; PR.linhas=null; PR.lista=await fnProm({acao:'listar'}); PR.erro=''; }
+  catch(e){ PR.erro=e.message; }
+  PR.ocupado=''; render(); window.scrollTo(0,0);
+}
+function cancelarProm(){ Object.assign(PR,{linhas:null,checa:null,previa:null,erro:'',arquivo:''}); render(); }
+const LINK_APP='https://ipalamoni.github.io/pss-vendas/';
+const msgZap=n=>`Olá, ${String(n.nome).split(' ')[0]}! Este é o app de indicadores da PSS. 1) Abra o link: ${LINK_APP}  2) Entre com Usuário: ${n.login} e Senha: ${n.senha}  3) No Android toque em Instalar (ou menu ⋮ > Adicionar à tela inicial). No iPhone: Safari > Compartilhar > Adicionar à Tela de Início, e depois entre pelo ícone.`;
+function baixarLoginsProm(){
+  const l=(PR.resultado&&PR.resultado.novos)||[]; if(!l.length) return;
+  const q=v=>{ v=v==null?'':String(v); return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  const csv='﻿'+[['Nome completo','Usuário','Senha','Região','Lojas','Mensagem para WhatsApp'],...l.map(n=>[n.nome,n.login,n.senha,n.regiao,n.lojas,msgZap(n)])].map(r=>r.map(q).join(';')).join('\r\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); const a=document.createElement('a'); a.href=url; a.download='logins_promotoras_'+new Date().toISOString().slice(0,10)+'.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+function copiarZap(i){ const n=PR.resultado.novos[i]; const t=msgZap(n); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{ const b=document.getElementById('zap'+i); if(b){ b.textContent='Copiado ✓'; setTimeout(()=>{ b.textContent='Copiar mensagem'; },1800); } }).catch(()=>prompt('Copie a mensagem:',t)); }
+function telaPromotoras(){
+  let h=topo('Promotoras',true)+'<main>';
+  const lojasTxt=a=>a.map(x=>`${esc(x.loja||'')}${x.numero?' '+esc(x.numero):''} <small>(${esc(x.codigo)})</small>`).join(', ');
+  if(PR.ocupado) h+=`<div class="aviso">${esc(PR.ocupado)}</div>`;
+  if(PR.erro) h+=`<div class="aviso" style="background:var(--ruim-claro);color:var(--ruim)"><b>Não deu certo:</b> ${esc(PR.erro)}</div>`;
+  const R=PR.resultado;
+  if(R){
+    h+=`<div class="card cab-cli"><h2>Importação concluída</h2><p class="nota" style="margin:0">${R.novos.length} login(s) criado(s) · ${R.alterados.length} com lojas alteradas · ${R.removidos.length} bloqueado(s) · ${R.iguais} sem mudança · ${R.arquivos} arquivo(s) gerado(s) com dados até ${String(R.dadosAte||"").split("-").reverse().join("/")}</p></div>`;
+    if(R.novos.length) h+=`<div class="card"><h2>Logins novos <span class="tag">${R.novos.length}</span></h2>
+      <div class="aviso"><b>Anote ou baixe agora:</b> a senha só aparece aqui, nesta tela.</div>
+      <div class="rol"><table><thead><tr><th>Nome</th><th>Usuário</th><th>Senha</th></tr></thead><tbody>${R.novos.map((n,i)=>`<tr><td class="nome">${esc(n.nome)}<small>${esc(n.regiao||'')} · ${n.lojas} lojas</small><button class="mais" style="margin:6px 0 0;height:36px;padding:0 10px;width:auto;font-size:13px" id="zap${i}" onclick="copiarZap(${i})">Copiar mensagem</button></td><td class="l nome"><b>${esc(n.login)}</b></td><td class="l"><b>${esc(n.senha)}</b></td></tr>`).join('')}</tbody></table></div>
+      <button class="mais" onclick="baixarLoginsProm()">Baixar logins e mensagens (Excel)</button></div>`;
+    if(R.alterados.length) h+=`<div class="card"><h2>Lojas alteradas</h2>${R.alterados.map(a=>`<p class="nota" style="margin:0 0 8px"><b>${esc(a.nome)}</b> (${esc(a.login)}) — login e senha mantidos.${a.adicionadas.length?`<br>+ ${lojasTxt(a.adicionadas)}`:''}${a.removidas.length?`<br>− ${lojasTxt(a.removidas)}`:''}</p>`).join('')}</div>`;
+    if(R.removidos.length) h+=`<div class="card"><h2>Bloqueados (saíram da planilha)</h2><p class="nota" style="margin:0">${R.removidos.map(x=>esc(x.nome)+' ('+esc(x.login)+')').join(', ')}</p></div>`;
+    if(R.naoAchadas&&R.naoAchadas.length) h+=`<div class="card"><h2>Lojas sem venda na base <span class="tag">${R.naoAchadas.length}</span></h2><p class="nota" style="margin:0">${R.naoAchadas.map(x=>`<b>${esc(x.nome)}</b>: ${esc(x.loja)} ${esc(x.numero||'')} (código ${esc(x.codigo)})`).join('<br>')}</p><p class="nota">Provavelmente o código está errado na planilha.</p></div>`;
+    h+=`<button class="mais" onclick="PR.resultado=null;render()">Fechar resumo</button>`;
+  }
+  if(PR.previa&&PR.checa){
+    const P=PR.previa, C=PR.checa;
+    h+=`<div class="card cab-cli"><h2>Conferência antes de gravar</h2><p class="nota" style="margin:0">Arquivo <b>${esc(PR.arquivo)}</b>, aba ${esc(C.aba)}: ${PR.linhas.length} lojas, ${C.pessoas} pessoas. Nada foi gravado ainda.</p></div>`;
+    h+=`<div class="kpis"><div class="kpi"><div class="rot">Logins novos</div><div class="val">${P.novos.length}</div></div><div class="kpi lar"><div class="rot">Lojas alteradas</div><div class="val">${P.alterados.length}</div></div>
+      <div class="kpi ${P.removidos.length?'ruim':''}"><div class="rot">Serão bloqueados</div><div class="val">${P.removidos.length}</div></div><div class="kpi"><div class="rot">Sem mudança</div><div class="val">${P.iguais}</div></div></div>`;
+    if(C.naoAchadas.length) h+=`<div class="card" style="border-top:5px solid var(--ruim)"><h2>Lojas que NÃO estão na base de vendas <span class="tag">${C.naoAchadas.length}</span></h2><p class="nota" style="margin:0">${C.naoAchadas.map(x=>`<b>${esc(x.nome)}</b>: ${esc(x.loja)} ${esc(x.numero||'')} — código <b>${esc(x.codigo)}</b>`).join('<br>')}</p><p class="nota">Provavelmente o número está errado. Se gravar assim, essas lojas ficam na lista, mas sem dados.</p></div>`;
+    else h+=`<div class="card"><h2>Lojas na base de vendas</h2><p class="nota" style="margin:0">✔ Todos os ${new Set(PR.linhas.map(l=>l.codigo)).size} códigos existem na base de vendas.</p></div>`;
+    if(P.novos.length) h+=`<div class="card"><h2>Logins que serão criados</h2><div class="rol"><table><thead><tr><th>Nome</th><th>Usuário</th><th>Lojas</th></tr></thead><tbody>${P.novos.map(n=>`<tr><td class="nome">${esc(n.nome)}<small>${esc(n.regiao||'')}</small></td><td class="l nome"><b>${esc(n.login)}</b></td><td>${n.lojas}</td></tr>`).join('')}</tbody></table></div><p class="nota">A senha (primeiro nome + 4 números) é criada ao confirmar e aparece na próxima tela.</p></div>`;
+    if(P.alterados.length) h+=`<div class="card"><h2>Lojas que mudam</h2>${P.alterados.map(a=>`<p class="nota" style="margin:0 0 8px"><b>${esc(a.nome)}</b> (${esc(a.login)}) — login e senha continuam.${a.adicionadas.length?`<br>+ ${lojasTxt(a.adicionadas)}`:''}${a.removidas.length?`<br>− ${lojasTxt(a.removidas)}`:''}</p>`).join('')}</div>`;
+    if(P.removidos.length) h+=`<div class="card"><h2>Não estão mais na planilha (serão bloqueados)</h2><p class="nota" style="margin:0">${P.removidos.map(x=>esc(x.nome)+' ('+esc(x.login)+')').join(', ')}</p></div>`;
+    if(P.reativados.length) h+=`<div class="card"><h2>Voltam a ter acesso</h2><p class="nota" style="margin:0">${P.reativados.map(x=>esc(x.nome)+' ('+esc(x.login)+')').join(', ')}</p></div>`;
+    if(C.dupla.length) h+=`<div class="card"><h2>Lojas com mais de uma pessoa <span class="tag">${C.dupla.length}</span></h2><p class="nota" style="margin:0">${C.dupla.map(d=>`${esc(d.loja||'')} (${esc(d.codigo)}): ${d.nomes.map(esc).join(' e ')}`).join('<br>')}</p><p class="nota">As duas pessoas enxergam a loja.</p></div>`;
+    if(C.divergentes.length) h+=`<div class="card"><h2>Nome da loja diferente da base <span class="tag">${C.divergentes.length}</span></h2><div class="rol" style="max-height:320px"><table><thead><tr><th>Loja: na planilha → na base</th><th>Código</th></tr></thead><tbody>${C.divergentes.map(d=>`<tr><td class="nome">${esc(d.loja)} ${esc(d.numero||'')}<small>→ ${esc(d.base)}</small><small class="vd">${esc(d.nome)}</small></td><td>${esc(d.codigo)}</td></tr>`).join('')}</tbody></table></div><p class="nota">Só para conferência: vale o código. Se o código estiver certo, pode gravar.</p></div>`;
+    h+=`<div style="display:grid;gap:10px;margin:4px 0 8px"><button class="btn-entrar" onclick="confirmarProm()" ${PR.ocupado?'disabled':''}>Confirmar e gravar</button><button class="limpar" style="height:50px" onclick="cancelarProm()">Cancelar</button></div>`;
+  }
+  if(!PR.previa){
+    h+=`<div class="card"><h2>Importar planilha de promotoras</h2>
+      <p class="nota" style="margin:0 0 10px">Escolha o Excel com a aba <b>Dados</b> (colunas: Região, Nome da promotora, Loja atendida, Código da loja, Número/nome da loja). Antes de gravar, o app mostra o que vai mudar. A planilha é a regra: quem já tem login só tem as lojas ajustadas (usuário e senha não mudam), quem é novo ganha login, e quem saiu é bloqueado.</p>
+      <label class="btn-entrar" style="display:flex;align-items:center;justify-content:center;cursor:pointer">Escolher planilha (.xlsx)<input type="file" accept=".xlsx,.xls" style="display:none" onchange="lerPlanilhaProm(this)"></label></div>`;
+    const L=(PR.lista&&PR.lista.promotoras)||[];
+    if(PR.lista) h+=`<div class="card"><h2>Promotores(as) cadastrados(as) <span class="tag">${L.filter(p=>p.ativo).length}</span></h2>${L.length?`<div class="rol"><table><thead><tr><th>Nome</th><th>Usuário</th><th>Lojas</th></tr></thead><tbody>${L.slice().sort((a,b)=>b.ativo-a.ativo||a.nome.localeCompare(b.nome)).map(p=>`<tr><td class="nome">${esc(p.nome)}<small>${esc(p.regiao||'')}${p.ativo?'':' · bloqueado(a)'}</small></td><td class="l nome">${esc(p.login)}</td><td>${p.lojas.length}</td></tr>`).join('')}</tbody></table></div><p class="nota">Lista gravada em ${esc(PR.lista.atualizado||'–')}. Arquivos das promotoras gerados em ${esc(PR.lista.gerado||'–')} (são refeitos sozinhos depois de cada atualização do app).</p>`:'<div class="vazio">Nenhuma promotora cadastrada ainda.</div>'}</div>`;
+  }
+  return h+rodape()+'</main>';
+}
 function exportarProdutos(){
   if(!ehAdmin()) return;
   const n=M.ym.length, de=Math.max(0,n-3), pac=new Float64Array(M.prod.length);
