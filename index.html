@@ -32,7 +32,7 @@
   --topo:#026E57; --topo-borda:transparent; --neutro:#EEEBE3; --abas:#ECE8DE; --th:#E6EAE7; --th-borda:#CFD8D3; --th-on:#D6E4DD; --th-ativo:#D6E4DD;
   --tfoot:#EEF2EF; --tot:#F3F5F3; --toque:#F1EEE6; --desab:#F1EFEA; --desab-txt:#8D9792; --mz:#9AA5A0; --ico-ord:#8D9792;
   --vd:#66756F; --tag-txt:#8A5400; --aviso-txt:#6B4300; --sombra:rgba(30,42,38,.09); --veu:rgba(20,25,23,.45);
-  --barra:#026E57; --rot-barra:#014D3D; --dentro-barra:#FFFFFF; --rot-lar:#8A5400; --grade:#ECE8DE; --foco:#FD9B02;
+  --barra:#026E57; --rot-barra:#014D3D; --dentro-barra:#FFFFFF; --rot-lar:#8A5400; --grade:#ECE8DE; --foco:#FD9B02; --pill:#FD9B02; --pill-txt:#2B1A00;
   --raio:16px; --larg:760px;
 }
 [data-tema="escuro"]{
@@ -44,7 +44,7 @@
   --topo:#1F1E1D; --topo-borda:#3A3936; --neutro:#3E3D3A; --abas:#2A2A28; --th:#3A3A36; --th-borda:#4D4C46; --th-on:#43423D; --th-ativo:#43423D;
   --tfoot:#353532; --tot:#343431; --toque:#3A3936; --desab:#2E2E2C; --desab-txt:#7D7B74; --mz:#6F6D66; --ico-ord:#8A8880;
   --vd:#A3A199; --tag-txt:#FFD08A; --aviso-txt:#FFD08A; --sombra:rgba(0,0,0,.35); --veu:rgba(0,0,0,.6);
-  --barra:#3FAF8A; --rot-barra:#CFEFE3; --dentro-barra:#10241D; --rot-lar:#FFC266; --grade:#3A3936; --foco:#FDA526;
+  --barra:#3FAF8A; --rot-barra:#CFEFE3; --dentro-barra:#10241D; --rot-lar:#FFC266; --grade:#3A3936; --foco:#FDA526; --pill:#FDA526; --pill-txt:#2B1A00;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--fundo);color:var(--texto);font-family:"Nunito Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:16px}
@@ -129,6 +129,7 @@ tr.click{cursor:pointer}tr.click:active td{background:var(--toque)}
 .tag{display:inline-block;background:var(--laranja-claro);color:var(--tag-txt);font-size:12px;font-weight:800;border-radius:8px;padding:2px 8px;margin-left:6px;vertical-align:middle}
 .mais{width:100%;height:46px;border:1.5px solid var(--verde);background:var(--card);color:var(--verde);border-radius:12px;font-weight:800;margin-top:10px;cursor:pointer}
 .graf{position:relative;height:250px}
+.graf.alto{height:320px}
 .cab-cli{text-align:center;border-top:5px solid var(--laranja)}
 td.l{text-align:left}
 td small.u{display:block;font-weight:400;color:var(--sub);font-size:11.5px}
@@ -245,6 +246,7 @@ main{max-width:var(--larg)}
   .fcorpo .filtros > .full:not(.atalhos):not(.dica){grid-column:auto}
   .limpar{grid-column:4;justify-self:stretch}
   .graf{height:320px}
+  .graf.alto{height:380px}
   .card{padding:18px 20px}
   .rol{max-height:620px}
   .mtzw{max-height:680px}
@@ -258,6 +260,15 @@ main{max-width:var(--larg)}
   main > .marcas .pal{max-width:120px}
   .ola{font-size:22px}
 }
+/* v12: botão de tema (lâmpada) */
+.btn-tema{flex:0 0 44px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.btn-tema svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+[data-tema="escuro"] .btn-tema svg{stroke:var(--laranja);fill:rgba(253,165,38,.22)}
+.btn-tema:hover{background:rgba(255,255,255,.24)}
+.btn-tema.solto{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:14px;background:var(--card);box-shadow:0 0 0 1px var(--linha)}
+.btn-tema.solto svg{stroke:var(--sub)}
+[data-tema="escuro"] .btn-tema.solto svg{stroke:var(--laranja)}
+.login{position:relative}
 @media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}.fcab .seta{transition:none}}
 </style>
 </head>
@@ -588,7 +599,7 @@ function abrirProd(p){ abrirDetalhe('prodloja',{prods:[p]}); }
 
 function topo(t,voltarBtn){
   const ini=U.nome.split(' ').map(s=>s[0]).slice(0,2).join('');
-  return `<div class="topo">${voltarBtn?`<button class="btn-voltar" aria-label="Voltar" onclick="voltar()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>`:''}<h1>${t}</h1><button class="chip-user" aria-label="Menu de ${esc(U.nome)}: aparência e trocar de usuário" aria-haspopup="dialog" onclick="abrirOv()">${esc(ini)} ▾</button></div>`;
+  return `<div class="topo">${voltarBtn?`<button class="btn-voltar" aria-label="Voltar" onclick="voltar()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>`:''}<h1>${t}</h1>${btnTema()}<button class="chip-user" aria-label="Menu de ${esc(U.nome)}: aparência e trocar de usuário" aria-haspopup="dialog" onclick="abrirOv()">${esc(ini)} ▾</button></div>`;
 }
 function abrirOv(){ document.getElementById('ovNome').textContent=U.nome; document.getElementById('ovPerfil').textContent=U.perfil==='dir'?'Diretoria — vê todos os vendedores':U.perfil==='ger'?'Gestor — '+regiaoTxt()+', todos os vendedores':'Vendedor — vê só os próprios dados'; document.getElementById('ov').classList.add('on'); marcarTema(); setTimeout(()=>{ const b=document.querySelector('#ov .tema button.on'); if(b) b.focus(); },30); }
 function fecharOv(){ document.getElementById('ov').classList.remove('on'); }
@@ -819,24 +830,50 @@ function escopoTxt(){
 }
 
 // ---------- rótulos de dados nos gráficos ----------
+// v12: rótulos legíveis. Barras: número dentro da barra (ou acima, com contorno). Linha: etiqueta laranja sólida com texto escuro.
+const rr=(ctx,x,y,w,h,r)=>{ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); };
+const comHalo=(ctx,txt,x,y)=>{ ctx.lineJoin='round'; ctx.lineWidth=3.5; ctx.strokeStyle=COR.card; ctx.strokeText(txt,x,y); ctx.fillText(txt,x,y); };
 const rotulos={id:'rotulos',afterDatasetsDraw(ch){
-  const ctx=ch.ctx;
+  const ctx=ch.ctx, A=ch.chartArea;
   ch.data.datasets.forEach((ds,di)=>{ const o=ds.rot; if(!o) return; const meta=ch.getDatasetMeta(di); if(meta.hidden) return;
-    meta.data.forEach((el,i)=>{ const v=ds.data[i]; if(v==null) return; const txt=o.fmt(v);
+    meta.data.forEach((el,i)=>{ const v=ds.data[i]; if(v==null||!isFinite(v)) return; const txt=o.fmt(v);
       ctx.save(); ctx.font=`800 ${o.size}px "Nunito Sans", system-ui, sans-serif`;
-      if(o.vertical){
-        ctx.textBaseline='middle';
-        if(o.tipo==='bar'){ const h=el.base-el.y; ctx.translate(el.x,el.y+5); ctx.rotate(-Math.PI/2); ctx.textAlign='right';
-          const dentro=h>ctx.measureText(txt).width+8; ctx.fillStyle=dentro?COR.dentro:o.cor; if(!dentro){ctx.textAlign='left';ctx.translate(10,0);} }
-        else { ctx.translate(el.x,el.y-8); ctx.rotate(-Math.PI/2); ctx.textAlign='left'; ctx.fillStyle=o.cor; }
-        ctx.fillText(txt,0,0);
-      } else { ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillStyle=o.cor; ctx.fillText(txt,el.x,el.y-5); }
+      const w=ctx.measureText(txt).width, th=o.size, n=meta.data.length||1, slot=(A.right-A.left)/n;
+      const vertical=o.tipo==='bar'?(w+6>Math.min(slot*0.92,(el.width||slot)+14)):(w+16>slot*0.96);
+      if(o.tipo==='bar'){
+        const h=el.base-el.y;
+        if(vertical){
+          ctx.translate(el.x,el.y); ctx.rotate(-Math.PI/2); ctx.textBaseline='middle';
+          if(h>w+12){ ctx.textAlign='right'; ctx.fillStyle=COR.dentro; ctx.fillText(txt,-6,0); }
+          else { ctx.textAlign='left'; ctx.fillStyle=o.cor; comHalo(ctx,txt,5,0); }
+        } else {
+          ctx.textAlign='center';
+          if(h>th+12&&(el.width||0)>w+6){ ctx.textBaseline='top'; ctx.fillStyle=COR.dentro; ctx.fillText(txt,el.x,el.y+6); }
+          else { ctx.textBaseline='bottom'; ctx.fillStyle=o.cor; comHalo(ctx,txt,el.x,el.y-4); }
+        }
+      } else {
+        const px=5, py=3, bw=w+px*2, bh=th+py*2, gap=7;
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        if(vertical){
+          let cy=el.y-gap-bw/2; if(cy-bw/2<2) cy=el.y+gap+bw/2;
+          ctx.translate(el.x,cy); ctx.rotate(-Math.PI/2);
+          ctx.fillStyle=COR.pill; rr(ctx,-bw/2,-bh/2,bw,bh,bh/2); ctx.fill();
+          ctx.fillStyle=COR.pillTxt; ctx.fillText(txt,0,1);
+        } else {
+          let cy=el.y-gap-bh/2; if(cy-bh/2<2) cy=el.y+gap+bh/2;
+          const cx=Math.min(Math.max(el.x,A.left+bw/2),A.right+bw/2-4);
+          ctx.fillStyle=COR.pill; rr(ctx,cx-bw/2,cy-bh/2,bw,bh,bh/2); ctx.fill();
+          ctx.fillStyle=COR.pillTxt; ctx.fillText(txt,cx,cy+1);
+        }
+      }
       ctx.restore(); }); });
 }};
 // ---------- tema claro / escuro (v10) ----------
 let COR={};
 function lerCores(){ const st=getComputedStyle(document.documentElement), g=k=>st.getPropertyValue(k).trim();
-  COR={barra:g('--barra'),rotBarra:g('--rot-barra'),rotLar:g('--rot-lar'),grade:g('--grade'),sub:g('--sub'),ruim:g('--ruim'),dentro:g('--dentro-barra')}; }
+  COR={pill:g('--pill'),pillTxt:g('--pill-txt'),card:g('--card'),barra:g('--barra'),rotBarra:g('--rot-barra'),rotLar:g('--rot-lar'),grade:g('--grade'),sub:g('--sub'),ruim:g('--ruim'),dentro:g('--dentro-barra')}; }
+const temaAtual=()=>document.documentElement.getAttribute('data-tema')==='escuro'?'escuro':'claro';
+function btnTema(solto){ const p=temaAtual()==='escuro'?'claro':'escuro'; return `<button type="button" class="btn-tema${solto?' solto':''}" onclick="setTema('${p}')" aria-label="Mudar para o tema ${p}" title="Mudar para o tema ${p}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21.5h4"/><path d="M12 2.5a6.5 6.5 0 0 0-3.9 11.7c.6.5.9 1.2.9 2V16.5h6v-.3c0-.8.3-1.5.9-2A6.5 6.5 0 0 0 12 2.5z"/></svg></button>`; }
 function temaPref(){ try{ return localStorage.getItem('pss-tema')||'auto'; }catch(e){ return 'auto'; } }
 const mqEscuro=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):null;
 function aplicarTema(){
@@ -846,7 +883,7 @@ function aplicarTema(){
   lerCores();
 }
 function marcarTema(){ const p=temaPref(); document.querySelectorAll('#ov .tema button').forEach(b=>{ const on=b.dataset.t===p; b.classList.toggle('on',on); b.setAttribute('aria-checked',on); }); }
-function setTema(p){ try{ localStorage.setItem('pss-tema',p); }catch(e){} aplicarTema(); marcarTema(); if(U&&M){ const y=window.scrollY; render(); window.scrollTo(0,y); } }
+function setTema(p){ try{ localStorage.setItem('pss-tema',p); }catch(e){} aplicarTema(); marcarTema(); const y=window.scrollY; render(); window.scrollTo(0,y); }
 if(mqEscuro){ const mud=()=>{ if(temaPref()==='auto'){ aplicarTema(); if(U&&M){ const y=window.scrollY; render(); window.scrollTo(0,y); } } };
   if(mqEscuro.addEventListener) mqEscuro.addEventListener('change',mud); else if(mqEscuro.addListener) mqEscuro.addListener(mud); }
 aplicarTema();
@@ -877,7 +914,7 @@ function render(){
 }
 
 function telaLogin(msg){
-  return `<div class="login">${marcas()}
+  return `<div class="login">${btnTema(true)}${marcas()}
    <div style="font-weight:800;font-size:20px;color:var(--verde-esc)">Indicadores de vendas</div>
    <form onsubmit="entrar(event)">
      <div><label for="lgU">Usuário</label><input id="lgU" type="text" autocomplete="username" autocapitalize="words" placeholder="Ex.: Luan ou Leandro Duarte" required></div>
@@ -1031,7 +1068,7 @@ function grafVendas(){
   charts.push(new Chart(document.getElementById('g2'),{type:'line',plugins:[rotulos],data:{labels:labs,datasets:[
       {data:pct,borderColor:'#FD9B02',backgroundColor:'#FD9B02',pointRadius:4,tension:.25,spanGaps:true,rot:{fmt:v=>nf1.format(v)+'%',size:tam,cor:COR.rotLar,vertical:muitos,tipo:'line'}},
       {data:labs.map(()=>LIMITE),borderColor:COR.ruim,borderDash:[6,5],pointRadius:0,borderWidth:1.5}]},
-    options:{animation:false,maintainAspectRatio:false,layout:{padding:{top:muitos?34:22}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.datasetIndex?'Limite '+LIMITE+'%':P(c.raw)}}},
+    options:{animation:false,maintainAspectRatio:false,layout:{padding:{top:muitos?50:26}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.datasetIndex?'Limite '+LIMITE+'%':P(c.raw)}}},
       scales:{y:{beginAtZero:true,grace:'10%',ticks:{callback:v=>nf1.format(v)+'%',maxTicksLimit:6},grid:{color:COR.grade}},x:{grid:{display:false}}}}}));
 }
 
@@ -1303,7 +1340,7 @@ function telaVV(){
   window._vv={labs:ms.map(m=>ymLab(m.mi)+(P.parcial[m.mi]?'*':'')),fat:ms.map(m=>m.fat/100),pct:ms.map(m=>m.fat>0?m.dt/m.fat*100:null),pos:ms.map(m=>m.pos),nov:ms.map(m=>m.conhecido?m.novos:null)};
   const parc=ms.some(m=>P.parcial[m.mi]);
   h+=`<div class="secao">Mês a mês</div>`;
-  h+=`<div class="card"><h2>Venda e % de trocas + devoluções</h2><div class="graf"><canvas id="gVV1"></canvas></div><p class="nota">Barras = venda (R$). Linha laranja = % de trocas + devoluções sobre a venda; tracejado vermelho = limite de ${LIMITE}%.${parc?' * mês com só parte dos dias no período.':''}</p></div>`;
+  h+=`<div class="card"><h2>Venda e % de trocas + devoluções</h2><div class="graf alto"><canvas id="gVV1"></canvas></div><p class="nota">Barras = venda (R$). Linha laranja = % de trocas + devoluções sobre a venda; tracejado vermelho = limite de ${LIMITE}%.${parc?' * mês com só parte dos dias no período.':''}</p></div>`;
   h+=`<div class="card"><h2>Positivação — clientes por mês</h2><div class="graf" style="height:230px"><canvas id="gVV2"></canvas></div><p class="nota">Verde = clientes que compraram no mês. Laranja = clientes novos (não compravam nos 3 meses anteriores).</p></div>`;
   const colsM=[{t:'Mês',cls:'nome l',asc:1,s:x=>x.mi,h:x=>ymLab(x.mi,true)+(P.parcial[x.mi]?'<small>parte do mês</small>':'')},
     {t:'Venda<br>R$',s:x=>x.fat,h:x=>Rt(x.fat)},{t:'DEV+<wbr>TRC R$',s:x=>x.dt,h:x=>Rt(x.dt)},{t:'%',s:x=>x.fat>0?x.dt/x.fat:null,h:x=>pctCel(x.fat,x.dt)},
@@ -1374,13 +1411,14 @@ function grafVV(){
   const g=window._vv; if(!g) return; const e1=document.getElementById('gVV1'), e2=document.getElementById('gVV2'); if(!e1||!e2) return;
   const muitos=g.labs.length>8, tam=g.labs.length>16?9.5:g.labs.length>8?10.5:12;
   Chart.defaults.font.family='"Nunito Sans", system-ui, sans-serif'; Chart.defaults.color=COR.sub;
-  const maxP=Math.max(LIMITE*1.6,...g.pct.filter(x=>x!=null&&isFinite(x)));
+  const maxP=Math.max(LIMITE*1.6,...g.pct.filter(x=>x!=null&&isFinite(x))), maxF=Math.max(1,...g.fat);
+  const yMax=maxF/0.56, p2Max=maxP>10?Math.ceil(maxP*1.1/5)*5:Math.ceil(maxP*1.15), p2Min=-p2Max*1.55; // barras até ~56% da altura; 0% da linha fica acima delas
   charts.push(new Chart(e1,{type:'bar',plugins:[rotulos],data:{labels:g.labs,datasets:[
       {type:'bar',data:g.fat,backgroundColor:COR.barra,borderRadius:6,maxBarThickness:46,yAxisID:'y',order:3,rot:{fmt:fmtMi,size:tam,cor:COR.rotBarra,vertical:muitos,tipo:'bar'}},
-      {type:'line',data:g.pct,borderColor:'#FD9B02',backgroundColor:'#FD9B02',pointRadius:4,tension:.25,spanGaps:true,yAxisID:'y2',order:1,rot:{fmt:v=>nf1.format(v)+'%',size:tam,cor:COR.rotLar,vertical:muitos,tipo:'line'}},
+      {type:'line',data:g.pct,borderColor:'#FD9B02',backgroundColor:'#FD9B02',pointRadius:4,tension:.25,spanGaps:true,yAxisID:'y2',order:1,borderWidth:2.5,rot:{fmt:v=>nf1.format(v)+'%',size:tam,cor:COR.rotLar,vertical:muitos,tipo:'line'}},
       {type:'line',data:g.labs.map(()=>LIMITE),borderColor:COR.ruim,borderDash:[6,5],pointRadius:0,borderWidth:1.5,yAxisID:'y2',order:2}]},
-    options:{animation:false,maintainAspectRatio:false,layout:{padding:{top:muitos?34:22}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.datasetIndex===0?'Venda R$ '+nf0.format(c.raw):c.datasetIndex===1?'% troca '+P(c.raw):'Limite '+LIMITE+'%'}}},
-      scales:{y:{beginAtZero:true,grace:'8%',ticks:{callback:fmtMi,maxTicksLimit:6},grid:{color:COR.grade}},y2:{position:'right',beginAtZero:true,max:Math.ceil(maxP*1.25),ticks:{callback:v=>nf1.format(v)+'%',maxTicksLimit:5},grid:{display:false}},x:{grid:{display:false}}}}}));
+    options:{animation:false,maintainAspectRatio:false,layout:{padding:{top:muitos?50:26}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.datasetIndex===0?'Venda R$ '+nf0.format(c.raw):c.datasetIndex===1?'% troca '+P(c.raw):'Limite '+LIMITE+'%'}}},
+      scales:{y:{min:0,max:yMax,ticks:{callback:v=>v>maxF*1.04?'':fmtMi(v),maxTicksLimit:9},grid:{color:c=>c.tick&&c.tick.value>maxF*1.04?'transparent':COR.grade}},y2:{position:'right',min:p2Min,max:p2Max,afterBuildTicks:ax=>{ax.ticks=[0,p2Max/3,p2Max*2/3,p2Max].map(v=>({value:v}));},ticks:{callback:v=>nf0.format(v)+'%'},grid:{display:false}},x:{grid:{display:false}}}}}));
   charts.push(new Chart(e2,{type:'bar',plugins:[rotulos],data:{labels:g.labs,datasets:[
       {data:g.pos,backgroundColor:COR.barra,borderRadius:5,maxBarThickness:34,rot:{fmt:v=>Q(v),size:tam,cor:COR.rotBarra,vertical:muitos,tipo:'bar'}},
       {data:g.nov,backgroundColor:'#FD9B02',borderRadius:5,maxBarThickness:34,rot:{fmt:v=>Q(v),size:tam,cor:COR.rotLar,vertical:muitos,tipo:'bar'}}]},
