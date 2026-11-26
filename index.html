@@ -1266,8 +1266,20 @@ function telaProdLoja(){
 }
 
 // ---------- Visão Vendedor: resumo, mês a mês, positivação, melhores/piores, matrizes cliente × mês e produto × mês ----------
-// Cliente novo (positivação) = comprou no mês e NÃO comprou nos 3 meses anteriores, no contexto do filtro
-// (vendedores, rede, UF/cidade e produtos escolhidos). Ex.: novo em nov = sem compra em ago, set e out.
+// Cliente novo (v13) = comprou no mês (dentro dos filtros) e NÃO comprou DA EMPRESA — de nenhum vendedor, de nenhum produto —
+// nos 6 meses anteriores. Ex.: novo em nov/2026 = sem compra na empresa de mai a out/2026. Cliente que só trocou de vendedor NÃO é novo.
+// Histórico da empresa: M.cpos (atualizador v9.3: meses com compra de cada cliente, qualquer vendedor). Arquivo antigo: usa o próprio arquivo.
+const NOVO_MESES=6;
+function posEmpresa(){
+  if(M._pe) return M._pe;
+  const nC=M.cli.length, s=new Set();
+  if(M.cpos){ for(const r of M.cpos){ const c=r[0]; for(let i=1;i<r.length;i++) s.add(r[i]*nC+c); } }
+  else { const f=new Map(); cada(0,M.ym.length-1,(mi,c,p,fat)=>{ const k=mi*nC+c; f.set(k,(f.get(k)||0)+fat); },{vm:null}); for(const [k,v] of f) if(v>0) s.add(k); }
+  return M._pe=s;
+}
+// vendedor com arquivo antigo (sem cpos) não tem o histórico da empresa: não calcula novos (mostra –) até a próxima atualização
+const novoDisp=()=>!!M.cpos||U.perfil!=='vend';
+function ehNovo(c,mi){ if(mi<NOVO_MESES||!novoDisp()) return false; const s=posEmpresa(), nC=M.cli.length; for(let j=1;j<=NOVO_MESES;j++) if(s.has((mi-j)*nC+c)) return false; return true; }
 let cacheVV={k:null,r:null};
 function vvDados(){
   const P=per(), o={rede:S.rede,local:true,pm:prodMask()};
@@ -1284,17 +1296,13 @@ function vvDados(){
     const k1=mi*nC+c; fC.set(k1,(fC.get(k1)||0)+fat);
     const k2=(v*nM+mi)*nC+c; fVC.set(k2,(fVC.get(k2)||0)+fat);
   },{...o,p:P});
-  // histórico em meses inteiros (3 meses antes do período até o fim dele)
-  const hC=new Map(), hVC=new Map();
-  cada(Math.max(0,P.de-3),P.ate,(mi,c,p,fat,qv,dev,qd,trc,qt,v)=>{ const k1=mi*nC+c; hC.set(k1,(hC.get(k1)||0)+fat); const k2=(v*nM+mi)*nC+c; hVC.set(k2,(hVC.get(k2)||0)+fat); },o);
-  const comprou=(mp,kk)=>(mp.get(kk)||0)>0;
-  const meses=[]; for(let mi=P.de;mi<=P.ate;mi++) meses.push({mi,...(porM[mi]||z()),pos:0,novos:0,conhecido:mi>=3});
+  const meses=[]; for(let mi=P.de;mi<=P.ate;mi++) meses.push({mi,...(porM[mi]||z()),pos:0,novos:0,conhecido:mi>=NOVO_MESES&&novoDisp()});
   const novos=new Map(), posit=new Set();
   for(const [k1,f] of fC){ if(f<=0) continue; const mi=Math.floor(k1/nC), c=k1-mi*nC, m=meses[mi-P.de]; m.pos++; posit.add(c);
-    if(mi>=3){ let nv=true; for(let j=1;j<=3;j++) if(comprou(hC,(mi-j)*nC+c)){ nv=false; break; } if(nv){ m.novos++; if(!novos.has(c)||novos.get(c)>mi) novos.set(c,mi); } } }
+    if(ehNovo(c,mi)){ m.novos++; if(!novos.has(c)||novos.get(c)>mi) novos.set(c,mi); } }
   const vend={};
   for(const [k2,f] of fVC){ if(f<=0) continue; const c=k2%nC, r=(k2-c)/nC, mi=r%nM, v=(r-mi)/nM; const x=vend[v]||(vend[v]={pos:new Set(),novos:new Set()}); x.pos.add(c);
-    if(mi>=3){ let nv=true; for(let j=1;j<=3;j++) if(comprou(hVC,(v*nM+mi-j)*nC+c)){ nv=false; break; } if(nv) x.novos.add(c); } }
+    if(ehNovo(c,mi)) x.novos.add(c); }
   const r={P,tot,porC,porP,porM,porV,cm,pmz,meses,novos,posit,vend};
   cacheVV={k,r}; return r;
 }
@@ -1316,13 +1324,13 @@ function telaVV(){
   const extra=[txtLocal(),S.rede>=0?titulo(M.rede[S.rede]):'',txtProdutos(true)].filter(Boolean).join(' · ');
   h+=`<div class="card cab-cli"><div style="font-weight:800;font-size:17px">${esc(vendsTxt())}</div><div class="nota">${periodoTxt()}${extra?' · <b>'+esc(extra)+'</b>':''}</div></div>`;
   if(!t.fat&&!t.dt){ h+='<div class="card vazio">Sem movimento para estes filtros.</div>'; window._vv=null; return h+rodape()+'</main>'; }
-  const semHist=P.de<3;
+  const semHist=P.de<NOVO_MESES;
   h+=`<div class="kpis vvkpi">
     <div class="kpi"><div class="rot">Venda</div><div class="val">${R(t.fat)}</div><div class="det">${Q(t.qv)} un.</div></div>
     <div class="kpi lar"><div class="rot">$ DEV + TRC</div><div class="val">${R(t.dt)}</div><div class="det">${Q(t.qdt)} un. voltaram</div></div>
     <div class="kpi wide ${pct>LIMITE?'ruim':''}"><div class="rot">% trocas + devoluções sobre a venda</div><div class="val">${P_(pct)}</div><div class="det">${pct>LIMITE?'Acima':'Dentro'} do limite de ${LIMITE}% · Trocas ${Rk(t.trc)} · Devoluções ${Rk(t.dev)}</div></div>
     <div class="kpi"><div class="rot">Clientes positivados</div><div class="val">${Q(nPos)}</div><div class="det">compraram no período</div></div>
-    <div class="kpi lar"><div class="rot">Clientes novos</div><div class="val">${Q(nNov)}</div><div class="det">sem compra nos 3 meses anteriores${semHist?' (a partir de '+ymLab(3)+')':''}</div></div>
+    <div class="kpi lar"><div class="rot">Clientes novos</div><div class="val">${novoDisp()?Q(nNov):'–'}</div><div class="det">${novoDisp()?`sem compra na empresa nos 6 meses anteriores${semHist?' (a partir de '+ymLab(NOVO_MESES)+')':''}`:'disponível após a próxima atualização dos dados'}</div></div>
     <div class="kpi"><div class="rot">Venda média por cliente</div><div class="val">${Rk(nPos?t.fat/nPos:0)}</div><div class="det">venda ÷ clientes positivados</div></div>
     <div class="kpi"><div class="rot">Mix vendido</div><div class="val">${Q(nMix)}</div><div class="det">produtos com venda</div></div>
   </div>`;
@@ -1331,7 +1339,7 @@ function telaVV(){
     const lv=Object.entries(d.porV).map(([v,x])=>({v:+v,...x,pos:d.vend[v]?d.vend[v].pos.size:0,nov:d.vend[v]?d.vend[v].novos.size:0})).sort((a,b)=>b.fat-a.fat);
     const cols=[{t:'Vendedor',txt:1,cls:'nome l',s:x=>nomeVend(x.v),h:x=>`${esc(nomeVend(x.v))}${VENDEDORES.some(y=>y[1]===M.vend[x.v])?'':'<small>outro colaborador</small>'}`},
       {t:'Venda<br>R$',s:x=>x.fat,h:x=>Rt(x.fat)},{t:'DEV+<wbr>TRC R$',s:x=>x.dt,h:x=>Rt(x.dt)},{t:'%',s:x=>x.fat>0?x.dt/x.fat:null,h:x=>pctCel(x.fat,x.dt)},
-      {t:'Clien-<wbr>tes',s:x=>x.pos,h:x=>Q(x.pos)},{t:'Novos',s:x=>x.nov,h:x=>semHist&&P.ate<3?'–':Q(x.nov)}];
+      {t:'Clien-<wbr>tes',s:x=>x.pos,h:x=>Q(x.pos)},{t:'Novos',s:x=>x.nov,h:x=>!novoDisp()||semHist&&P.ate<NOVO_MESES?'–':Q(x.nov)}];
     h+=`<div class="card"><h2>Resumo por vendedor <span class="tag">${lv.length}</span></h2><div class="rol" style="max-height:480px">${tab('vvV',cols,lv,{cls:'pl',tr:x=>`onclick="abrirVendVV(${x.v})" class="click"`,foot:['Total',Rt(t.fat),Rt(t.dt),pctCel(t.fat,t.dt),Q(nPos),Q(nNov)]})}</div>
       <p class="nota">Toque num vendedor para ver só ele (${notaVoltar}) Clientes e novos contam por vendedor; no total, o cliente atendido por dois vendedores conta uma vez. ${notaToque}</p></div>`;
   }
@@ -1341,7 +1349,7 @@ function telaVV(){
   const parc=ms.some(m=>P.parcial[m.mi]);
   h+=`<div class="secao">Mês a mês</div>`;
   h+=`<div class="card"><h2>Venda e % de trocas + devoluções</h2><div class="graf alto"><canvas id="gVV1"></canvas></div><p class="nota">Barras = venda (R$). Linha laranja = % de trocas + devoluções sobre a venda; tracejado vermelho = limite de ${LIMITE}%.${parc?' * mês com só parte dos dias no período.':''}</p></div>`;
-  h+=`<div class="card"><h2>Positivação — clientes por mês</h2><div class="graf" style="height:230px"><canvas id="gVV2"></canvas></div><p class="nota">Verde = clientes que compraram no mês. Laranja = clientes novos (não compravam nos 3 meses anteriores).</p></div>`;
+  h+=`<div class="card"><h2>Positivação — clientes por mês</h2><div class="graf" style="height:230px"><canvas id="gVV2"></canvas></div><p class="nota">Verde = clientes que compraram no mês. Laranja = clientes novos (não compravam da empresa, de nenhum vendedor, nos 6 meses anteriores).</p></div>`;
   const colsM=[{t:'Mês',cls:'nome l',asc:1,s:x=>x.mi,h:x=>ymLab(x.mi,true)+(P.parcial[x.mi]?'<small>parte do mês</small>':'')},
     {t:'Venda<br>R$',s:x=>x.fat,h:x=>Rt(x.fat)},{t:'DEV+<wbr>TRC R$',s:x=>x.dt,h:x=>Rt(x.dt)},{t:'%',s:x=>x.fat>0?x.dt/x.fat:null,h:x=>pctCel(x.fat,x.dt)},
     {t:'Clien-<wbr>tes',s:x=>x.pos,h:x=>Q(x.pos)},{t:'Novos',s:x=>x.conhecido?x.novos:null,h:x=>x.conhecido?Q(x.novos):'–'}];
@@ -1358,7 +1366,7 @@ function telaVV(){
     const ln=[...d.novos].map(([c,mi])=>({c,mi,...d.porC[c]})).sort((a,b)=>a.mi-b.mi||b.fat-a.fat);
     const colsN=[colLoja,{t:'Novo em',s:x=>x.mi,asc:1,h:x=>ymLab(x.mi)},{t:'Venda no<br>período R$',s:x=>x.fat,h:x=>Rt(x.fat)},colPct()];
     h+=`<div class="card"><h2>Clientes novos no período <span class="tag">${ln.length}</span></h2><div class="rol" style="max-height:420px">${tab('vvN',colsN,ln,{lim:S.limN,tr:trLojaCli})}</div>
-      ${ln.length>S.limN?`<button class="mais" onclick="S.limN+=20;render()">Mostrar mais</button>`:''}<p class="nota">Compraram no mês indicado e não compravam nos 3 meses anteriores.</p></div>`;
+      ${ln.length>S.limN?`<button class="mais" onclick="S.limN+=20;render()">Mostrar mais</button>`:''}<p class="nota">Compraram no mês indicado e não compravam da empresa (de nenhum vendedor) nos 6 meses anteriores. Cliente que só mudou de vendedor não conta como novo.</p></div>`;
   }
   h+=`<div class="secao">Produtos</div><div class="card">${crit}${bloco('vvPm','Melhores produtos',pM,colsP,trProd,'limP')}${bloco('vvPp','Piores produtos',pP,colsP,trProd,'limP')}
     ${Math.max(pM.length,pP.length)>S.limP?`<button class="mais" onclick="S.limP+=10;render()">Mostrar mais produtos</button>`:''}<p class="nota">${notaCrit} Toque num produto para ver loja a loja (${notaVoltar})</p></div>`;
