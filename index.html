@@ -269,6 +269,32 @@ main{max-width:var(--larg)}
 .btn-tema.solto svg{stroke:var(--sub)}
 [data-tema="escuro"] .btn-tema.solto svg{stroke:var(--laranja)}
 .login{position:relative}
+/* v15: pedidos em aberto */
+.menu button small.sb{display:block;font-size:12.5px;font-weight:700;color:var(--sub);margin-top:2px}
+.menu button.largo .txt{display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+.pstatus{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--sub);margin:0 2px 12px}
+.pstatus .pt{width:8px;height:8px;border-radius:50%;background:var(--bom);flex:0 0 8px}
+.pstatus .pt.velho{background:var(--ruim)}
+.plista{margin:0 -4px}
+.ped{border-bottom:1px solid var(--linha)}
+.ped>button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;width:100%;padding:11px 4px;cursor:pointer;min-height:56px}
+.ped>button:focus-visible{outline:3px solid var(--foco);outline-offset:-2px;border-radius:10px}
+.ped .cod{grid-row:1 / span 2;align-self:start;margin-top:2px;background:var(--verde-claro);color:var(--verde-esc);font-weight:800;font-size:12.5px;border-radius:8px;padding:3px 7px;font-variant-numeric:tabular-nums;min-width:48px;text-align:center}
+.ped .nm{font-weight:800;font-size:14.5px;line-height:1.25;overflow:hidden;text-overflow:ellipsis}
+.ped .vl{font-weight:800;font-size:15px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ped .sb2{grid-column:2 / span 2;font-size:12.5px;color:var(--sub);display:flex;justify-content:space-between;gap:8px}
+.ped .sb2 i{font-style:normal;white-space:nowrap}
+.ped .chev{display:inline-block;transition:transform .15s;color:var(--verde)}
+.ped.on .chev{transform:rotate(90deg)}
+.ped .itens{padding:0 4px 12px 4px}
+.ped .itens table td{padding:7px 3px}
+.ped .itens tr.saiu td{color:var(--sub);text-decoration:line-through}
+.ped .itens tfoot td{position:static}
+.pstatus span:last-child{line-height:1.3}
+.ped.fora .nm,.ped.fora .vl{color:var(--sub)}
+.tag.ok{background:var(--verde-claro);color:var(--verde-esc)}
+.selchip{display:inline-flex;align-items:center;gap:6px;background:var(--laranja-claro);color:var(--tag-txt);border-radius:10px;padding:4px 4px 4px 10px;font-size:13px;font-weight:800;margin:0 0 10px}
+.selchip button{border:0;background:var(--card);color:var(--tag-txt);border-radius:8px;width:28px;height:28px;font-weight:800;cursor:pointer}
 @media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}.fcab .seta{transition:none}}
 </style>
 </head>
@@ -316,13 +342,14 @@ let M=null, DET={}, PD=null, PDMI=null, DD=null, DDMI=null, DIA0=Date.UTC(2025,0
 let U=null; // usuário
 // período: d0/d1 = dias (contados desde DIA0); de/ate = meses correspondentes (calculados). sems = semanas marcadas (dia de início).
 // vends/ufs/cids/prods/grupos = seleção múltipla (vazio = todos).
-const S={d0:0,d1:0,de:null,ate:null,sems:[],vends:[],rede:-1,loja:-1,busca:'',ordCli:'pct',abaRk:'piores',nivelRk:'loja',minRk:0,abaPr:'todos',lim:20,limL:30,fAberto:false,ufs:[],cids:[],prods:[],grupos:[],ord:{},
+const S={pedLoja:'',pedVend:'',pedBusca:'',pedAberto:'',pedLimL:15,pedLimP:20,d0:0,d1:0,de:null,ate:null,sems:[],vends:[],rede:-1,loja:-1,busca:'',ordCli:'pct',abaRk:'piores',nivelRk:'loja',minRk:0,abaPr:'todos',lim:20,limL:30,fAberto:false,ufs:[],cids:[],prods:[],grupos:[],ord:{},
   mtzC:'pct',mtzP:'pct',critVV:'pct',limC:10,limP:10,limMC:40,limMP:40,limN:10,bMC:'',bMP:'',aviso:''};
 const charts=[];
 
 // ---------- formatação ----------
 const nf0=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0});
 const nf1=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const nf2=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const R=c=>'R$ '+nf0.format(Math.round(c/100));
 const Rk=c=>{const v=c/100;if(Math.abs(v)>=1e6)return 'R$ '+nf1.format(v/1e6)+' mi';if(Math.abs(v)>=1e4)return 'R$ '+nf0.format(v/1e3)+' mil';return 'R$ '+nf0.format(v)};
 const Q=n=>nf0.format(n);
@@ -568,7 +595,7 @@ const vdHtml=(k,nivel)=>{ const t=vendTxt(k,nivel); return t?`<small class="vd">
 // Cada "abertura" (tocar numa loja, num produto…) guarda como os filtros estavam. O voltar desfaz uma abertura por vez;
 // sem abertura pendente, volta para o Início.
 let PILHA=[], telaAtual=null;
-const CAMPOS_S=['d0','d1','de','ate','sems','vends','rede','loja','busca','ufs','cids','prods','grupos','minRk','ordCli','abaRk','nivelRk','abaPr','lim','limL','ord','fAberto','mtzC','mtzP','critVV','limC','limP','limMC','limMP','limN','bMC','bMP','aviso'];
+const CAMPOS_S=['pedLoja','pedVend','pedBusca','pedAberto','pedLimL','pedLimP','d0','d1','de','ate','sems','vends','rede','loja','busca','ufs','cids','prods','grupos','minRk','ordCli','abaRk','nivelRk','abaPr','lim','limL','ord','fAberto','mtzC','mtzP','critVV','limC','limP','limMC','limMP','limN','bMC','bMP','aviso'];
 function snapS(){ const o={}; CAMPOS_S.forEach(k=>o[k]=S[k]); return {S:JSON.parse(JSON.stringify(o)),y:window.scrollY}; }
 function entrouTela(p){ telaAtual=p; S.lim=20;S.limL=30;S.ord={};S.limC=10;S.limP=10;S.limMC=40;S.limMP=40;S.limN=10;S.bMC='';S.bMP='';S.fAberto=(p==='prodloja'&&!S.prods.length&&!S.grupos.length); render(); window.scrollTo(0,0); }
 function ir(p){ if(pagina()===p){ render(); return; } history.pushState({app:1,d:PILHA.length,nav:1},'','#'+p); entrouTela(p); }
@@ -591,7 +618,7 @@ window.addEventListener('popstate',e=>{
   if(pagina()!==telaAtual) entrouTela(pagina());
 });
 window.addEventListener('hashchange',()=>{ if(U&&M&&pagina()!==telaAtual) entrouTela(pagina()); });
-function pagina(){ const h=location.hash.replace('#',''); if(h==='producao') return U&&M&&verProd()?h:'inicio'; if(h==='grupos') return U&&verTodos()?h:'inicio'; if(h==='promotoras') return U&&M&&ehAdmin()?h:'inicio'; return ['vendas','clientes','ranking','produtos','prodloja','vendedor'].includes(h)?h:'inicio'; }
+function pagina(){ const h=location.hash.replace('#',''); if(h==='producao') return U&&M&&verProd()?h:'inicio'; if(h==='grupos') return U&&verTodos()?h:'inicio'; if(h==='promotoras') return U&&M&&ehAdmin()?h:'inicio'; return ['vendas','clientes','ranking','produtos','prodloja','vendedor','pedidos'].includes(h)?h:'inicio'; }
 // aberturas
 function abrirLoja(c){ abrirDetalhe(pagina(),{rede:M.cr[c],loja:c,busca:''}); }
 function abrirLojaCli(c){ abrirDetalhe('clientes',{rede:M.cr[c],loja:c,busca:''}); }
@@ -605,7 +632,7 @@ function topo(t,voltarBtn){
 }
 function abrirOv(){ document.getElementById('ovNome').textContent=U.nome; document.getElementById('ovPerfil').textContent=U.perfil==='dir'?'Diretoria — vê todos os vendedores':U.perfil==='ger'?'Gestor — '+regiaoTxt()+', todos os vendedores':ehProm()?'Promotor(a) — vê só as lojas que atende':'Vendedor — vê só os próprios dados'; document.getElementById('ovProm').style.display=ehAdmin()?'':'none'; document.getElementById('ov').classList.add('on'); marcarTema(); setTimeout(()=>{ const b=document.querySelector('#ov .tema button.on'); if(b) b.focus(); },30); }
 function fecharOv(){ document.getElementById('ov').classList.remove('on'); }
-async function sair(){ fecharOv(); try{await SB.auth.signOut()}catch(e){} U=null; M=null; DET={}; PD=null; PILHA=[]; telaAtual=null; history.replaceState(null,'',location.pathname); render(); }
+async function sair(){ fecharOv(); try{await SB.auth.signOut()}catch(e){} U=null; M=null; DET={}; PED.dados=null; PED.em=0; PED.erro=''; PD=null; PILHA=[]; telaAtual=null; history.replaceState(null,'',location.pathname); render(); }
 
 // ---------- opções dos filtros: só o que tem dado com os outros filtros escolhidos ----------
 // Cada lista considera o período, o vendedor e os demais filtros da tela (menos ela mesma).
@@ -912,6 +939,8 @@ function render(){
   if(p==='vendedor'){ app.innerHTML=telaVV(); grafVV(); }
   if(p==='producao'){ app.innerHTML=telaProducao(); aplicarFiltros(); grafProducao(); }
   if(p==='grupos'){ app.innerHTML=telaGrupos(); }
+  if(p==='pedidos'){ app.innerHTML=telaPedidos(); }
+  if(p==='inicio'||p==='pedidos'||p==='vendedor') carregarPedidos();
   if(p==='promotoras'){ app.innerHTML=telaPromotoras(); if(PR.lista===null&&!PR.ocupado) carregarPromotoras(); }
   acessivel();
 }
@@ -973,6 +1002,7 @@ function telaInicio(){
    </div>
    <div class="menu">
      ${btn('vendedor',verTodos()?'Visão Vendedor':'Minha visão de vendedor','<circle cx="9" cy="7" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5M16 4.5a3.5 3.5 0 0 1 0 7M18 13.8c2.1.7 3.5 2.9 3.5 6.2"/>','largo')}
+     ${btnPed()}
      ${btn('vendas','Vendas','<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')}
      ${btn('clientes','Clientes','<path d="M3 9l1.5-5h15L21 9M3 9h18M3 9v11h18V9M9 20v-6h6v6"/>')}
      ${btn('ranking','Ranking de clientes','<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 6h3v2a3 3 0 0 1-3 3M7 6H4v2a3 3 0 0 0 3 3"/>')}
@@ -987,6 +1017,117 @@ function telaInicio(){
 }
 // manutenção (só o administrador): lista de todos os produtos com o cadastro de embalagem, para completar no Excel
 const ehAdmin=()=>U&&U.perfil==='dir'&&U.arquivo==='ithalo';
+// ---------- Pedidos em aberto (ERP → programa Artas no servidor, a cada 30 min → função pedidos_abertos do banco) ----------
+// Cada perfil recebe só o que pode ver (o filtro é feito no banco): vendedor = pedidos dele; promotora = lojas dela; gestor = região; diretoria = tudo.
+// Valores do ERP em reais; aqui viram centavos para usar os mesmos formatos do app (R, Rk, Rt).
+const PED={st:'',dados:null,erro:'',em:0};
+async function carregarPedidos(forcar){
+  if(PED.st==='carregando'||!SB||!U) return;
+  if(!forcar&&PED.em&&Date.now()-PED.em<5*60e3) return;
+  PED.st='carregando';
+  try{ const {data,error}=await SB.rpc('pedidos_abertos'); if(error) throw new Error(error.message||'erro'); PED.dados=montarPed(data); PED.erro=''; }
+  catch(e){ PED.erro=String(e.message||e); }
+  PED.st=''; PED.em=Date.now();
+  const p=pagina(); if(U&&M&&(p==='inicio'||p==='pedidos'||p==='vendedor')){ const y=window.scrollY; render(); window.scrollTo(0,y); }
+}
+function montarPed(d){
+  const c={}; (d.colunas||[]).forEach((n,i)=>c[n]=i);
+  const peds=new Map();
+  for(const r of d.itens||[]){
+    const k=r[c.empresa]+'|'+r[c.numero]+'|'+r[c.data];
+    let p=peds.get(k);
+    if(!p){ p={k,num:r[c.numero],data:r[c.data],cli:String(r[c.cli_cod]||''),loja:r[c.fantasia]||r[c.razao]||'Cliente '+r[c.cli_cod],razao:r[c.razao]||'',rede:r[c.rede]||'',cid:r[c.cidade]||'',uf:r[c.uf]||'',col:r[c.colaborador]||'',itens:[],v:0,vSaiu:0,saiu:null}; peds.set(k,p); }
+    const it={pc:r[c.prod_cod],prod:r[c.produto]||'Produto '+r[c.prod_cod],q:+r[c.qtd]||0,v:Math.round((+r[c.valor]||0)*100),saiu:r[c.saiu_em]||null};
+    p.itens.push(it);
+    if(it.saiu){ p.vSaiu+=it.v; if(!p.saiu||it.saiu>p.saiu) p.saiu=it.saiu; } else p.v+=it.v;
+  }
+  const lista=[...peds.values()];
+  for(const p of lista){ p.aberto=p.itens.some(i=>!i.saiu); p.itens.sort((a,b)=>(!!a.saiu)-(!!b.saiu)||b.v-a.v); }
+  return {pedidos:lista,sinc:d.sincronizado||{}};
+}
+const dataBR=iso=>{ if(!iso) return ''; const t=String(iso).slice(0,10).split('-'); return t[2]+'/'+t[1]; };
+const horaBR=ts=>{ if(!ts) return ''; const d=new Date(ts); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); };
+const nomeColab=n=>{ const v=VENDEDORES.find(x=>chaveTxt(x[1])===chaveTxt(n)); return v?v[2]:titulo(String(n||'').replace(/\s*\(P\)\s*$/i,'')); };
+// pedidos visíveis com os filtros da página (vendedor, loja, busca). abertos=true: só os que ainda têm item em aberto
+function pedFiltrados(abertos,o={}){
+  if(!PED.dados) return [];
+  const b=chaveTxt(o.busca??S.pedBusca), vend=o.vend??S.pedVend, loja=o.loja??S.pedLoja, vs=o.vends;
+  return PED.dados.pedidos.filter(p=>(abertos?p.aberto:!p.aberto)
+    &&(!vend||chaveTxt(p.col)===vend)&&(!vs||vs.has(chaveTxt(p.col)))&&(!loja||p.cli===loja)
+    &&(!b||chaveTxt(p.loja+' '+p.razao+' '+p.cli+' '+p.num+' '+p.rede+' '+p.cid).includes(b)));
+}
+function lojasPed(lst){
+  const m=new Map();
+  for(const p of lst){ let l=m.get(p.cli); if(!l){ l={cli:p.cli,loja:p.loja,cid:p.cid,uf:p.uf,v:0,n:0,mais:p.data,cols:new Set()}; m.set(p.cli,l); } l.v+=p.v; l.n++; if(p.data<l.mais) l.mais=p.data; l.cols.add(p.col); }
+  return [...m.values()].sort((a,b)=>b.v-a.v);
+}
+function btnPed(){
+  const ab=PED.dados?pedFiltrados(true,{busca:'',vend:'',loja:''}):null;
+  const sub=PED.erro&&!PED.dados?'não foi possível carregar':!ab?'carregando…':ab.length?`${Rk(ab.reduce((s,p)=>s+p.v,0))} · ${ab.length} pedido${ab.length>1?'s':''}`:'nenhum pedido em aberto';
+  return `<button class="largo" onclick="ir('pedidos')"><div class="ic"><svg viewBox="0 0 24 24"><path d="M9 4h6v3H9zM9 5.5H6v15h12v-15h-3M9 12h6M9 16h4"/></svg></div><span class="txt">Pedidos em aberto<small class="sb">${sub}</small></span></button>`;
+}
+function statusPed(){
+  if(!PED.dados) return '';
+  const s=PED.dados.sinc||{}, em=s.em?new Date(s.em):null, velho=!em||Date.now()-em.getTime()>2*3600e3;
+  let h=`<div class="pstatus"><span class="pt ${velho?'velho':''}"></span><span>Atualizado ${em?horaBR(s.em):'—'} · vem do ERP a cada 30 min</span></div>`;
+  if(velho) h+=`<div class="aviso">O servidor não manda pedidos desde ${em?horaBR(s.em):'—'}. Os números podem estar desatualizados.</div>`;
+  return h;
+}
+function pedHtml(p,saiu){
+  const aberto=S.pedAberto===p.k, nIt=p.itens.filter(i=>!i.saiu).length, cortes=p.itens.filter(i=>i.saiu).length;
+  const sub=saiu?`Pedido ${esc(p.num)} · ${dataBR(p.data)} · saiu ${horaBR(p.saiu)}`:`Pedido ${esc(p.num)} · ${dataBR(p.data)} · ${nIt} ${nIt>1?'itens':'item'}${cortes?` · <b style="color:var(--ruim)">${cortes} saiu</b>`:''}`;
+  let h=`<div class="ped ${aberto?'on':''} ${saiu?'fora':''}"><button aria-expanded="${aberto}" onclick="S.pedAberto=S.pedAberto==='${p.k}'?'':'${p.k}';render()">
+    <span class="cod">${esc(p.cli)}</span><span class="nm">${esc(p.loja)}</span><span class="vl">${R(saiu?p.vSaiu:p.v)} <span class="chev">›</span></span>
+    <span class="sb2"><span>${sub}</span>${verTodos()&&p.col?`<i>${esc(nomeColab(p.col))}</i>`:''}</span></button>`;
+  if(aberto){
+    h+=`<div class="itens"><table><thead><tr><th>Produto</th><th>Qtd</th><th>R$</th></tr></thead><tbody>${p.itens.map(i=>`<tr class="${i.saiu&&!saiu?'saiu':''}"><td class="nome">${esc(i.prod)}<small>${esc(i.pc)}${i.saiu&&!saiu?' · saiu do pedido '+horaBR(i.saiu):''}</small></td><td>${Q(i.q)}</td><td>${nf2.format(i.v/100)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td class="l">Total ${saiu?'que saiu':'em aberto'}</td><td>${Q(p.itens.filter(i=>saiu||!i.saiu).reduce((s,i)=>s+i.q,0))}</td><td>${nf2.format((saiu?p.vSaiu:p.v)/100)}</td></tr></tfoot></table>
+      ${p.cid?`<p class="nota">${esc(p.razao&&p.razao!==p.loja?p.razao+' · ':'')}${esc(p.cid)}/${esc(p.uf)}${p.rede?' · '+esc(p.rede):''}</p>`:''}</div>`;
+  }
+  return h+'</div>';
+}
+function telaPedidos(){
+  let h=topo('Pedidos em aberto',true)+'<main>';
+  if(!PED.dados){ return h+(PED.erro?`<div class="aviso" style="background:var(--ruim-claro);color:var(--ruim)">Não foi possível carregar os pedidos: ${esc(PED.erro)}<br><button class="mais" onclick="PED.em=0;carregarPedidos(true)">Tentar de novo</button></div>`:'<div class="carregando" style="min-height:40vh"><div class="spin"></div><div>Carregando pedidos…</div></div>')+rodape()+'</main>'; }
+  h+=statusPed();
+  // filtros: vendedor (quem vê vários) e busca
+  const cols=[...new Set(PED.dados.pedidos.filter(p=>p.aberto).map(p=>p.col).filter(Boolean))].sort((a,b)=>nomeColab(a).localeCompare(nomeColab(b)));
+  h+=`<div class="card" style="padding:12px"><div class="filtros">
+    ${verTodos()&&cols.length>1?`<div class="full"><label for="pedV">Vendedor</label><select id="pedV" onchange="S.pedVend=this.value;S.pedLoja='';S.pedAberto='';render()"><option value="">Todos os vendedores (${cols.length})</option>${cols.map(c=>`<option value="${esc(chaveTxt(c))}" ${S.pedVend===chaveTxt(c)?'selected':''}>${esc(nomeColab(c))}</option>`).join('')}</select></div>`:''}
+    <div class="full"><label for="pedB">Buscar</label><input id="pedB" type="search" class="lupa" placeholder="Loja, código ou nº do pedido" value="${esc(S.pedBusca)}" oninput="S.pedBusca=this.value;S.pedLimL=15;S.pedLimP=20;clearTimeout(window._tb);window._tb=setTimeout(()=>{render();const e=document.getElementById('pedB');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length);}},250)"></div></div></div>`;
+  const ab=pedFiltrados(true,{loja:''}), ls=lojasPed(ab), tot=ab.reduce((s,p)=>s+p.v,0);
+  const mais=ab.reduce((m,p)=>!m||p.data<m?p.data:m,'');
+  h+=`<div class="kpis"><div class="kpi wide"><div class="rot">Em aberto</div><div class="val">${R(tot)}</div><div class="det">${ab.length} pedido${ab.length===1?'':'s'} · ${ls.length} loja${ls.length===1?'':'s'}${mais?' · mais antigo de '+dataBR(mais):''}</div></div></div>`;
+  if(!ab.length) h+=`<div class="card"><div class="vazio">Nenhum pedido em aberto${S.pedBusca||S.pedVend?' com esses filtros':''}.</div></div>`;
+  else{
+    // 1) resumo por loja (código, loja, valor) — tocar abre os pedidos da loja
+    h+=`<div class="card"><h2>Por loja <span class="tag">${ls.length}</span></h2><div class="plista">${ls.slice(0,S.pedLimL).map(l=>`<div class="ped ${S.pedLoja===l.cli?'on':''}"><button onclick="S.pedLoja=S.pedLoja==='${esc(l.cli)}'?'':'${esc(l.cli)}';S.pedAberto='';render();if(S.pedLoja)setTimeout(()=>{const e=document.getElementById('cardPeds');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})},30)">
+      <span class="cod">${esc(l.cli)}</span><span class="nm">${esc(l.loja)}</span><span class="vl">${R(l.v)} <span class="chev">›</span></span>
+      <span class="sb2"><span>${l.n} pedido${l.n>1?'s':''}${l.cid?' · '+esc(l.cid)+'/'+esc(l.uf):''}</span>${verTodos()?`<i>${[...l.cols].map(c=>esc(nomeColab(c))).join(', ')}</i>`:''}</span></button></div>`).join('')}</div>
+      ${ls.length>S.pedLimL?`<button class="mais" onclick="S.pedLimL+=20;render()">Mostrar mais lojas (${ls.length-S.pedLimL})</button>`:''}<p class="nota">Toque numa loja para ver os pedidos dela.</p></div>`;
+    // 2) pedidos (abre os produtos)
+    const lp=pedFiltrados(true).sort((a,b)=>b.data.localeCompare(a.data)||b.v-a.v), lj=S.pedLoja?ls.find(l=>l.cli===S.pedLoja):null;
+    h+=`<div class="card" id="cardPeds"><h2>Pedidos <span class="tag">${lp.length}</span></h2>
+      ${lj?`<span class="selchip">${esc(lj.cli)} · ${esc(lj.loja)}<button aria-label="Ver todas as lojas" onclick="S.pedLoja='';S.pedAberto='';render()">✕</button></span>`:''}
+      <div class="plista">${lp.slice(0,S.pedLimP).map(p=>pedHtml(p,false)).join('')}</div>
+      ${lp.length>S.pedLimP?`<button class="mais" onclick="S.pedLimP+=20;render()">Mostrar mais pedidos (${lp.length-S.pedLimP})</button>`:''}
+      <p class="nota">Toque num pedido para ver os produtos, a quantidade e o valor. Item riscado = saiu do pedido (faturado, cortado ou cancelado).</p></div>`;
+  }
+  // 3) saíram da lista (faturados/cancelados) nos últimos 3 dias
+  const fs=pedFiltrados(false).sort((a,b)=>String(b.saiu).localeCompare(String(a.saiu)));
+  if(fs.length) h+=`<div class="card"><h2>Saíram da lista <span class="tag ok">${fs.length}</span></h2><p class="nota" style="margin:-4px 0 6px">Pedidos faturados (ou cancelados) nos últimos 3 dias.</p><div class="plista">${fs.slice(0,30).map(p=>pedHtml(p,true)).join('')}</div></div>`;
+  h+=`<p class="nota" style="text-align:center">Em aberto = pedido no ERP ainda não liberado para faturamento (pedidos de 30 dias atrás até 30 dias à frente).</p>`;
+  return h+rodape()+'</main>';
+}
+// bloco da Visão Vendedor: pedidos em aberto por loja (respeita o filtro de vendedor da Visão)
+function vvPedidos(){
+  if(!PED.dados) return PED.erro?'':`<div class="card"><h2>Pedidos em aberto</h2><div class="vazio">Carregando…</div></div>`;
+  const vs=verTodos()&&S.vends.length?new Set(S.vends.map(i=>chaveTxt(M.vend[i]))):null;
+  const ab=pedFiltrados(true,{busca:'',vend:'',loja:'',vends:vs}), ls=lojasPed(ab), tot=ab.reduce((s,p)=>s+p.v,0);
+  return `<div class="secao">Pedidos em aberto</div><div class="card"><h2>${R(tot)} <span class="tag">${ab.length} pedido${ab.length===1?'':'s'}</span></h2>
+    ${ls.length?`<div class="plista">${ls.slice(0,8).map(l=>`<div class="ped"><button onclick="S.pedLoja='${esc(l.cli)}';S.pedVend='';S.pedBusca='';S.pedAberto='';abrirDetalhe('pedidos',{})"><span class="cod">${esc(l.cli)}</span><span class="nm">${esc(l.loja)}</span><span class="vl">${R(l.v)} <span class="chev">›</span></span><span class="sb2"><span>${l.n} pedido${l.n>1?'s':''} · desde ${dataBR(l.mais)}</span></span></button></div>`).join('')}</div>`:'<div class="vazio">Nenhum pedido em aberto.</div>'}
+    <button class="mais" onclick="S.pedLoja='';S.pedAberto='';ir('pedidos')">Ver todos os pedidos${ls.length>8?` (${ls.length} lojas)`:''}</button></div>`;
+}
 // ---------- Promotoras (só administrador): importar a planilha "Dados" e criar/ajustar logins pelo serviço do Supabase ----------
 // Regras (serviço "promotoras"): planilha = verdade. Promotora que já existe: só as lojas mudam (login e senha não mudam).
 // Nova: login = primeiro nome (se já existir ou repetir: primeiro + segundo nome; sem segundo: + região); senha = primeiro nome + 4 números.
@@ -1467,6 +1608,7 @@ function telaVV(){
   const cM=listaMP(d.porC,'c',true), cP=listaMP(d.porC,'c',false), pM=listaMP(d.porP,'p',true), pP=listaMP(d.porP,'p',false);
   const colsC=[colRank,colLoja,colVenda,colDT,colPct()], colsP=[colRank,colProd,colVenda,colDT,colPct()];
   const bloco=(id,tit,l,cols,tr,limK)=>`<h2 style="margin-top:6px">${tit} <span class="tag">${l.length}</span></h2>${l.length?`<div class="rol" style="max-height:440px">${tab(id,cols,l,{lim:S[limK],tr})}</div>`:'<div class="vazio">Nenhum.</div>'}`;
+  h+=vvPedidos();
   h+=`<div class="secao">Clientes</div><div class="card">${crit}${bloco('vvCm','Melhores clientes',cM,colsC,trLojaCli,'limC')}${bloco('vvCp','Piores clientes',cP,colsC,trLojaCli,'limC')}
     ${Math.max(cM.length,cP.length)>S.limC?`<button class="mais" onclick="S.limC+=10;render()">Mostrar mais clientes</button>`:''}<p class="nota">${notaCrit} Toque num cliente para abrir em Clientes (${notaVoltar})</p></div>`;
   if(nNov){
