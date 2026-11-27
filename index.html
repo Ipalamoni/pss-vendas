@@ -8,7 +8,7 @@
 <script>(function(){var t="auto";try{t=localStorage.getItem("pss-tema")||"auto"}catch(e){}var e=t==="auto"?(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro"):t;document.documentElement.setAttribute("data-tema",e);if(e==="escuro"){var m=document.querySelector("meta[name=theme-color]");if(m)m.content="#1F1E1D";}})();</script>
 <title>PSS Vendas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -16,8 +16,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="PSS Vendas">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="config.js"></script>
 <script src="grupos.js"></script>
 <style>
@@ -134,6 +133,8 @@ tr.click{cursor:pointer}tr.click:active td{background:var(--toque)}
 td.l{text-align:left}
 td small.u{display:block;font-weight:400;color:var(--sub);font-size:11.5px}
 .vazio{text-align:center;color:var(--sub);padding:26px 8px}
+.novos{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;background:var(--verde-forte);color:#fff;border-radius:999px;padding:10px 8px 10px 18px;font-size:14px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px;white-space:nowrap;max-width:calc(100vw - 32px)}
+.novos button{border:0;background:#fff;color:var(--verde-forte);font:inherit;font-weight:800;border-radius:999px;padding:8px 14px;cursor:pointer;min-height:36px}
 .aviso{background:var(--laranja-claro);color:var(--aviso-txt);border-radius:12px;padding:10px 12px;font-size:13px;margin:0 0 12px}
 .carregando{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:16px;color:var(--sub)}
 .spin{width:42px;height:42px;border:5px solid var(--verde-claro);border-top-color:var(--verde);border-radius:50%;animation:g 1s linear infinite}
@@ -396,11 +397,53 @@ async function gunzipJson(blob){
   if(!window.pako) await new Promise((ok,err)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js';sc.onload=ok;sc.onerror=err;document.head.appendChild(sc);});
   return JSON.parse(pako.ungzip(new Uint8Array(await blob.arrayBuffer()),{to:'string'}));
 }
+// v19: o arquivo de dados fica guardado no celular. Ao abrir, o app só pergunta ao servidor a "versão" do arquivo
+// (data e tamanho, poucos bytes) e baixa de novo só se mudou. Sem internet, abre com o último arquivo guardado.
+// Com o app aberto, confere de tempos em tempos (e quando volta para o app) e avisa "Chegaram dados novos". Ao sair, apaga.
+const CACHE_DADOS='pss-dados';
+let DADOS_VER='', DADOS_CAM='', DADOS_CHECK=0;
+async function verDados(caminho){
+  const i=caminho.lastIndexOf('/'), pasta=caminho.slice(0,i), nome=caminho.slice(i+1);
+  const {data,error}=await SB.storage.from('dados').list(pasta,{search:nome,limit:20});
+  if(error) throw error;
+  const f=(data||[]).find(x=>x.name===nome); if(!f) return '';
+  const md=f.metadata||{}; return [f.updated_at||f.created_at||'',md.size||'',md.eTag||''].join('|');
+}
+const chaveCache=caminho=>location.origin+location.pathname.replace(/[^/]*$/,'')+'__dados/'+caminho;
+async function abrirCache(){ try{ return 'caches' in window?await caches.open(CACHE_DADOS):null; }catch(e){ return null; } }
+async function baixarDados(caminho){
+  let ver='', semRede=false; try{ ver=await verDados(caminho); }catch(e){ semRede=true; }
+  const cache=await abrirCache(), k=chaveCache(caminho);
+  const marca=v=>{ DADOS_VER=v; DADOS_CAM=caminho; DADOS_CHECK=Date.now(); };
+  if(cache&&ver){ try{ const r=await cache.match(k); if(r&&r.headers.get('x-ver')===ver){ marca(ver); return await r.blob(); } }catch(e){} }
+  try{
+    const {data,error}=await SB.storage.from('dados').download(caminho+'?t='+Date.now());
+    if(error) throw new Error('download: '+(error.message||error));
+    if(cache&&ver){ try{ await cache.put(k,new Response(data,{headers:{'x-ver':ver,'content-type':'application/octet-stream'}})); }catch(e){} }
+    marca(ver); return data;
+  }catch(err){   // sem internet: usa o último arquivo guardado, se houver
+    if(cache&&semRede){ try{ const r=await cache.match(k); if(r){ marca(r.headers.get('x-ver')||''); return await r.blob(); } }catch(e){} }
+    throw err;
+  }
+}
+async function checarNovos(){
+  if(!U||!M||!DADOS_CAM||document.visibilityState==='hidden'||Date.now()-DADOS_CHECK<10*60e3) return;
+  DADOS_CHECK=Date.now();
+  try{ const v=await verDados(DADOS_CAM); if(v&&v!==DADOS_VER) mostrarNovos(); }catch(e){}
+  const p=pagina(); if(p==='inicio'||p==='pedidos'||p==='vendedor') carregarPedidos();
+}
+function mostrarNovos(){
+  if(document.getElementById('novosDados')) return;
+  const d=document.createElement('div'); d.id='novosDados'; d.className='novos'; d.setAttribute('role','status');
+  d.innerHTML='Chegaram dados novos. <button onclick="atualizarDados()">Atualizar agora</button>'; document.body.appendChild(d);
+}
+function esconderNovos(){ const e=document.getElementById('novosDados'); if(e) e.remove(); }
+async function atualizarDados(){ esconderNovos(); await abrir(); }
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') checarNovos(); });
+setInterval(checarNovos,5*60e3);
 async function carregarDados(){
   const caminho=U.perfil==='dir'?'dir/dados.json.gz':U.perfil==='ger'?'ger/'+U.arquivo+'.json.gz':U.perfil==='prom'?'prom/'+U.arquivo+'.json.gz':'vend/'+U.arquivo+'.json.gz';
-  const {data,error}=await SB.storage.from('dados').download(caminho+'?t='+Date.now());
-  if(error) throw new Error('download: '+(error.message||error));
-  const j=await gunzipJson(data);
+  const j=await gunzipJson(await baixarDados(caminho));
   DET={todos:j.det.map(col=>Int32Array.from(col))}; delete j.det;
   PD=null; PDMI=null; DD=null; DDMI=null;
   if(j.pd&&j.pd.length===5&&j.pdBase){ PD=j.pd.map(col=>Int32Array.from(col)); delete j.pd; }
@@ -643,7 +686,7 @@ function topo(t,voltarBtn){
 }
 function abrirOv(){ document.getElementById('ovNome').textContent=U.nome; document.getElementById('ovPerfil').textContent=U.perfil==='dir'?'Diretoria — vê todos os vendedores':U.perfil==='ger'?'Gestor — '+regiaoTxt()+', todos os vendedores':ehProm()?'Promotor(a) — vê só as lojas que atende':'Vendedor — vê só os próprios dados'; document.getElementById('ovProm').style.display=ehAdmin()?'':'none'; document.getElementById('ov').classList.add('on'); marcarTema(); setTimeout(()=>{ const b=document.querySelector('#ov .tema button.on'); if(b) b.focus(); },30); }
 function fecharOv(){ document.getElementById('ov').classList.remove('on'); }
-async function sair(){ fecharOv(); try{await SB.auth.signOut()}catch(e){} U=null; M=null; DET={}; PED.dados=null; PED.em=0; PED.erro=''; PD=null; PILHA=[]; telaAtual=null; history.replaceState(null,'',location.pathname); render(); }
+async function sair(){ fecharOv(); esconderNovos(); DADOS_VER=''; DADOS_CAM=''; try{ if('caches' in window) await caches.delete(CACHE_DADOS); }catch(e){} try{await SB.auth.signOut()}catch(e){} U=null; M=null; DET={}; PED.dados=null; PED.em=0; PED.erro=''; PD=null; PILHA=[]; telaAtual=null; history.replaceState(null,'',location.pathname); render(); }
 
 // ---------- opções dos filtros: só o que tem dado com os outros filtros escolhidos ----------
 // Cada lista considera o período, o vendedor e os demais filtros da tela (menos ela mesma).
@@ -854,7 +897,20 @@ function setGrupos(gs){ S.grupos=gs; S.prods=[]; S.lim=20; render(); }
 function nomeVend(i){ const v=VENDEDORES.find(x=>x[1]===M.vend[i]); return v?v[0]:titulo(M.vend[i]||''); }
 function nomeCurto(i){ const v=VENDEDORES.find(x=>x[1]===M.vend[i]); return v?v[2]:titulo((M.vend[i]||'').replace(/\s*\(P\)\s*$/i,'')); }
 function aplicarFiltros(){}
-function limparCharts(){ while(charts.length) charts.pop().destroy(); }
+// v19: a biblioteca de gráficos só é baixada quando uma tela com gráfico abre (o Início abre sem ela).
+// Cada gráfico é montado depois que a tela já apareceu, e só quando chega perto da parte visível (celular fraco não trava).
+const CHART_URL='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+let _chartP=null, GEN=0; const obsG=[];
+function chartJs(){ if(window.Chart) return Promise.resolve(); if(!_chartP) _chartP=new Promise((ok,err)=>{ const sc=document.createElement('script'); sc.src=CHART_URL; sc.crossOrigin='anonymous'; sc.onload=ok; sc.onerror=()=>{ _chartP=null; sc.remove(); err(new Error('gráfico')); }; document.head.appendChild(sc); }); return _chartP; }
+function limparCharts(){ GEN++; while(obsG.length) obsG.pop().disconnect(); while(charts.length) charts.pop().destroy(); }
+function GrafAdiado(el,cfg){
+  if(!el) return; const g=GEN;
+  const montar=()=>{ if(g!==GEN||!el.isConnected) return;
+    chartJs().then(()=>{ if(g!==GEN||!el.isConnected) return; Chart.defaults.font.family='"Nunito Sans", system-ui, sans-serif'; Chart.defaults.color=COR.sub; charts.push(new Chart(el,cfg)); })
+      .catch(()=>{ if(g===GEN&&el.parentElement) el.parentElement.innerHTML='<div class="vazio">Não foi possível carregar o gráfico (internet).</div>'; }); };
+  if('IntersectionObserver' in window){ const o=new IntersectionObserver(es=>{ if(es.some(e=>e.isIntersecting)){ o.disconnect(); setTimeout(montar,0); } },{rootMargin:'250px 0px'}); o.observe(el); obsG.push(o); }
+  else setTimeout(montar,0);
+}
 function periodoTxt(){
   let t;
   if(mesesInteiros()) t=ymLab(S.de,true)+(S.de!==S.ate?' a '+ymLab(S.ate,true):'');
@@ -1039,7 +1095,11 @@ async function carregarPedidos(forcar){
   try{ const {data,error}=await SB.rpc('pedidos_abertos'); if(error) throw new Error(error.message||'erro'); PED.dados=montarPed(data); PED.erro=''; }
   catch(e){ PED.erro=String(e.message||e); }
   PED.st=''; PED.em=Date.now();
-  const p=pagina(); if(U&&M&&(p==='inicio'||p==='pedidos'||p==='vendedor')){ const y=window.scrollY; render(); window.scrollTo(0,y); }
+  // v19: atualiza só o pedaço dos pedidos (antes redesenhava a tela inteira, com gráficos, de novo)
+  if(!U||!M) return; const p=pagina();
+  if(p==='pedidos'){ const y=window.scrollY; render(); window.scrollTo(0,y); }
+  else if(p==='inicio'){ const b=document.getElementById('btnPed'); if(b) b.outerHTML=btnPed(); }
+  else if(p==='vendedor'){ const b=document.getElementById('vvPed'); if(b){ b.innerHTML=vvPedidos(); acessivel(); } }
 }
 function montarPed(d){
   const c={}; (d.colunas||[]).forEach((n,i)=>c[n]=i);
@@ -1079,7 +1139,7 @@ function lojasPed(lst){
 function btnPed(){
   const ab=PED.dados?pedFiltrados(true,{busca:'',vend:'',loja:''}):null;
   const sub=PED.erro&&!PED.dados?'não foi possível carregar':!ab?'carregando…':ab.length?`${Rk(ab.reduce((s,p)=>s+p.v,0))} · ${ab.length} pedido${ab.length>1?'s':''}`:'nenhum pedido em aberto';
-  return `<button class="largo" onclick="ir('pedidos')"><div class="ic"><svg viewBox="0 0 24 24"><path d="M9 4h6v3H9zM9 5.5H6v15h12v-15h-3M9 12h6M9 16h4"/></svg></div><span class="txt">Pedidos em aberto<small class="sb">${sub}</small></span></button>`;
+  return `<button class="largo" id="btnPed" onclick="ir('pedidos')"><div class="ic"><svg viewBox="0 0 24 24"><path d="M9 4h6v3H9zM9 5.5H6v15h12v-15h-3M9 12h6M9 16h4"/></svg></div><span class="txt">Pedidos em aberto<small class="sb">${sub}</small></span></button>`;
 }
 function statusPed(){
   if(!PED.dados) return '';
@@ -1342,11 +1402,10 @@ function grafVendas(){
     Object.keys(SV.dias).map(Number).sort((a,b)=>a-b).forEach(d=>{ const o=SV.dias[d]; if(o.fat<=0) return; labs.push(dm(d)); fat.push(o.fat/100); pct.push(o.dt/o.fat*100); });
   } else SV.meses.forEach(r=>{ labs.push(ymLab(r.i)); fat.push(r.fat/100); pct.push(isFinite(r.pct)?r.pct:null); });
   const muitos=labs.length>8, tam=labs.length>16?9.5:labs.length>8?10.5:12;
-  Chart.defaults.font.family='"Nunito Sans", system-ui, sans-serif'; Chart.defaults.color=COR.sub;
-  charts.push(new Chart(document.getElementById('g1'),{type:'bar',plugins:[rotulos],data:{labels:labs,datasets:[{data:fat,backgroundColor:COR.barra,borderRadius:6,maxBarThickness:46,rot:{fmt:fmtMi,size:tam,cor:COR.rotBarra,vertical:muitos,tipo:'bar'}}]},
+  void(new GrafAdiado(document.getElementById('g1'),{type:'bar',plugins:[rotulos],data:{labels:labs,datasets:[{data:fat,backgroundColor:COR.barra,borderRadius:6,maxBarThickness:46,rot:{fmt:fmtMi,size:tam,cor:COR.rotBarra,vertical:muitos,tipo:'bar'}}]},
     options:{animation:false,maintainAspectRatio:false,layout:{padding:{top:muitos?4:22}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'R$ '+nf0.format(c.raw)}}},
       scales:{y:{grace:'8%',ticks:{callback:fmtMi,maxTicksLimit:6},grid:{color:COR.grade}},x:{grid:{display:false}}}}}));
-  charts.push(new Chart(document.getElementById('g2'),{type:'line',plugins:[rotulos],data:{labels:labs,datasets:[
+  void(new GrafAdiado(document.getElementById('g2'),{type:'line',plugins:[rotulos],data:{labels:labs,datasets:[
       {data:pct,borderColor:'#FD9B02',backgroundColor:'#FD9B02',pointRadius:4,tension:.25,spanGaps:true,rot:{fmt:v=>nf1.format(v)+'%',size:tam,cor:COR.rotLar,vertical:muitos,tipo:'line'}},
       {data:labs.map(()=>LIMITE),borderColor:COR.ruim,borderDash:[6,5],pointRadius:0,borderWidth:1.5}]},
     options:{animation:false,maintainAspectRatio:false,layout:{padding:{top:muitos?50:26}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.datasetIndex?'Limite '+LIMITE+'%':P(c.raw)}}},
@@ -1641,7 +1700,7 @@ function telaVV(){
   const cM=listaMP(d.porC,'c',true), cP=listaMP(d.porC,'c',false), pM=listaMP(d.porP,'p',true), pP=listaMP(d.porP,'p',false);
   const colsC=[colRank,colLoja,colVenda,colDT,colPct()], colsP=[colRank,colProd,colVenda,colDT,colPct()];
   const bloco=(id,tit,l,cols,tr,limK)=>`<h2 style="margin-top:6px">${tit} <span class="tag">${l.length}</span></h2>${l.length?`<div class="rol" style="max-height:440px">${tab(id,cols,l,{lim:S[limK],tr})}</div>`:'<div class="vazio">Nenhum.</div>'}`;
-  h+=vvPedidos();
+  h+='<div id="vvPed" style="display:contents">'+vvPedidos()+'</div>';
   h+=`<div class="secao">Clientes</div><div class="card">${crit}${bloco('vvCm','Melhores clientes',cM,colsC,trLojaCli,'limC')}${bloco('vvCp','Piores clientes',cP,colsC,trLojaCli,'limC')}
     ${Math.max(cM.length,cP.length)>S.limC?`<button class="mais" onclick="S.limC+=10;render()">Mostrar mais clientes</button>`:''}<p class="nota">${notaCrit} Toque num cliente para abrir em Clientes (${notaVoltar})</p></div>`;
   if(nNov){
@@ -1700,16 +1759,15 @@ function mtzHtml(tp){
 function grafVV(){
   const g=window._vv; if(!g) return; const e1=document.getElementById('gVV1'), e2=document.getElementById('gVV2'); if(!e1||!e2) return;
   const muitos=g.labs.length>8, tam=g.labs.length>16?9.5:g.labs.length>8?10.5:12;
-  Chart.defaults.font.family='"Nunito Sans", system-ui, sans-serif'; Chart.defaults.color=COR.sub;
   const maxP=Math.max(LIMITE*1.6,...g.pct.filter(x=>x!=null&&isFinite(x))), maxF=Math.max(1,...g.fat);
   const yMax=maxF/0.56, p2Max=maxP>10?Math.ceil(maxP*1.1/5)*5:Math.ceil(maxP*1.15), p2Min=-p2Max*1.55; // barras até ~56% da altura; 0% da linha fica acima delas
-  charts.push(new Chart(e1,{type:'bar',plugins:[rotulos],data:{labels:g.labs,datasets:[
+  void(new GrafAdiado(e1,{type:'bar',plugins:[rotulos],data:{labels:g.labs,datasets:[
       {type:'bar',data:g.fat,backgroundColor:COR.barra,borderRadius:6,maxBarThickness:46,yAxisID:'y',order:3,rot:{fmt:fmtMi,size:tam,cor:COR.rotBarra,vertical:muitos,tipo:'bar'}},
       {type:'line',data:g.pct,borderColor:'#FD9B02',backgroundColor:'#FD9B02',pointRadius:4,tension:.25,spanGaps:true,yAxisID:'y2',order:1,borderWidth:2.5,rot:{fmt:v=>nf1.format(v)+'%',size:tam,cor:COR.rotLar,vertical:muitos,tipo:'line'}},
       {type:'line',data:g.labs.map(()=>LIMITE),borderColor:COR.ruim,borderDash:[6,5],pointRadius:0,borderWidth:1.5,yAxisID:'y2',order:2}]},
     options:{animation:false,maintainAspectRatio:false,layout:{padding:{top:muitos?50:26}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.datasetIndex===0?'Venda R$ '+nf0.format(c.raw):c.datasetIndex===1?'% troca '+P(c.raw):'Limite '+LIMITE+'%'}}},
       scales:{y:{min:0,max:yMax,ticks:{callback:v=>v>maxF*1.04?'':fmtMi(v),maxTicksLimit:9},grid:{color:c=>c.tick&&c.tick.value>maxF*1.04?'transparent':COR.grade}},y2:{position:'right',min:p2Min,max:p2Max,afterBuildTicks:ax=>{ax.ticks=[0,p2Max/3,p2Max*2/3,p2Max].map(v=>({value:v}));},ticks:{callback:v=>nf0.format(v)+'%'},grid:{display:false}},x:{grid:{display:false}}}}}));
-  charts.push(new Chart(e2,{type:'bar',plugins:[rotulos],data:{labels:g.labs,datasets:[
+  void(new GrafAdiado(e2,{type:'bar',plugins:[rotulos],data:{labels:g.labs,datasets:[
       {data:g.pos,backgroundColor:COR.barra,borderRadius:5,maxBarThickness:34,rot:{fmt:v=>Q(v),size:tam,cor:COR.rotBarra,vertical:muitos,tipo:'bar'}},
       {data:g.nov,backgroundColor:'#FD9B02',borderRadius:5,maxBarThickness:34,rot:{fmt:v=>Q(v),size:tam,cor:COR.rotLar,vertical:muitos,tipo:'bar'}}]},
     options:{animation:false,maintainAspectRatio:false,layout:{padding:{top:muitos?4:22}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>(c.datasetIndex?'Novos ':'Clientes ')+Q(c.raw)}}},
@@ -1811,8 +1869,7 @@ function grafProducao(){
   const g=window._grafP, el=document.getElementById('gP'); if(!g||!el) return;
   const muitos=g.labs.length>8, tam=g.labs.length>16?9.5:g.labs.length>8?10.5:12;
   const fmt=v=>g.usaCx?Cx(v):fmtMi(v);
-  Chart.defaults.font.family='"Nunito Sans", system-ui, sans-serif'; Chart.defaults.color=COR.sub;
-  charts.push(new Chart(el,{type:'bar',plugins:[rotulos],data:{labels:g.labs,datasets:[
+  void(new GrafAdiado(el,{type:'bar',plugins:[rotulos],data:{labels:g.labs,datasets:[
       {type:'bar',data:g.vals,backgroundColor:COR.barra,borderRadius:6,maxBarThickness:46,order:2,rot:{fmt,size:tam,cor:COR.rotBarra,vertical:muitos,tipo:'bar'}},
       {type:'line',data:g.labs.map(()=>g.media),borderColor:'#FD9B02',borderDash:[6,5],pointRadius:0,borderWidth:2,order:1}]},
     options:{animation:false,maintainAspectRatio:false,layout:{padding:{top:muitos?4:22}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.datasetIndex?'Média '+fmt(c.raw):fmt(c.raw)+(g.usaCx?' caixas':' pacotes')}}},
@@ -1837,7 +1894,7 @@ function telaGrupos(){
   try{
     if(!window.CFG||!/^https:\/\/.+\.supabase\.co$/.test(CFG.url||'')) throw new Error('config.js sem o endereço do Supabase (ainda está com COLE_AQUI?)');
     if(typeof supabase==='undefined'){ // biblioteca bloqueada: tenta outro endereço
-      await new Promise((ok,err)=>{const sc=document.createElement('script');sc.src='https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js';sc.onload=ok;sc.onerror=()=>err(new Error('não consegui baixar a biblioteca de login (rede bloqueando cdn.jsdelivr.net e unpkg.com?)'));document.head.appendChild(sc);});
+      await new Promise((ok,err)=>{const sc=document.createElement('script');sc.src='https://unpkg.com/@supabase/supabase-js@2.119.2/dist/umd/supabase.js';sc.onload=ok;sc.onerror=()=>err(new Error('não consegui baixar a biblioteca de login (rede bloqueando cdn.jsdelivr.net e unpkg.com?)'));document.head.appendChild(sc);});
     }
     SB=supabase.createClient(CFG.url,CFG.chave,{auth:{persistSession:true,autoRefreshToken:true}});
     const {data}=await SB.auth.getSession();
