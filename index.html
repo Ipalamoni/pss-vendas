@@ -1382,18 +1382,7 @@ function telaVendas(){
      {t:'Venda R$',s:x=>x.fat,h:x=>Rt(x.fat)},
      {t:'DEV+TRC R$',s:x=>x.dt,h:x=>Rt(x.dt)},
      {t:'%',s:x=>isFinite(x.pct)?x.pct:null,h:x=>pctTag(x.pct)}],meses,{def:{c:0,d:-1}})}</div><p class="nota">${notaToque}</p></div>`;
-  if(verFin()&&!SV.usaDet){
-    h+=`<div class="card"><h2>Resultado <span class="tag">só diretoria</span></h2><table><tbody>
-      <tr><td class="l">Faturamento</td><td>${R(t.fat)}</td></tr>
-      <tr><td class="l">(−) Trocas + devoluções</td><td>${R(t.dt)}</td></tr>
-      <tr><td class="l" style="white-space:normal">(−) Impostos líquidos</td><td>${R(t.imp)}</td></tr>
-      <tr><td class="l"><b>Receita líquida</b></td><td><b>${R(t.rl)}</b></td></tr>
-      <tr><td class="l">(−) Custo novo total</td><td>${R(t.cus)}</td></tr>
-      <tr><td class="l"><b>Lucro bruto</b></td><td><b>${R(t.lb)}</b></td></tr>
-      <tr><td class="l"><b>Margem bruta</b></td><td><b>${P(t.mg)}</b></td></tr>
-      <tr><td class="l" style="color:var(--sub);white-space:normal">Bonificações (fora do faturamento)</td><td style="color:var(--sub)">${R(t.bon)}</td></tr>
-    </tbody></table><p class="nota">Regras iguais às do Power BI. Impostos líquidos = impostos da venda − imposto restituído nas devoluções.</p></div>`;
-  } else if(verFin()) h+=`<p class="nota" style="text-align:center">O card Resultado (impostos, custo e margem) aparece sem filtro de UF, cidade ou produto.</p>`;
+  // v20: card Resultado (impostos, custo, receita líquida, margem) retirado a pedido do Ithalo (27/11/2026): o custo é trabalhado à parte.
   return h+rodape()+'</main>';
 }
 function grafVendas(){
