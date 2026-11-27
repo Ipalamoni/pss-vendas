@@ -310,6 +310,7 @@ main{max-width:var(--larg)}
 .pstatus span:last-child{line-height:1.3}
 .ped.fora .nm,.ped.fora .vl{color:var(--sub)}
 .tag.ok{background:var(--verde-claro);color:var(--verde-esc)}
+.focobar{margin:0 0 10px}.foco-tit{display:flex;align-items:center;gap:10px;font-size:17px}.foco-tit .cod{background:var(--verde-forte);color:#fff;border-radius:8px;padding:3px 9px;font-weight:800;font-size:14px}
 .selchip{display:inline-flex;align-items:center;gap:6px;background:var(--laranja-claro);color:var(--tag-txt);border-radius:10px;padding:4px 4px 4px 10px;font-size:13px;font-weight:800;margin:0 0 10px}
 .selchip button{border:0;background:var(--card);color:var(--tag-txt);border-radius:8px;width:28px;height:28px;font-weight:800;cursor:pointer}
 @media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}.fcab .seta{transition:none}}
@@ -656,7 +657,7 @@ const vdHtml=(k,nivel)=>{ const t=vendTxt(k,nivel); return t?`<small class="vd">
 let PILHA=[], telaAtual=null;
 const CAMPOS_S=['pedLoja','pedVend','pedBusca','pedAberto','pedLimL','pedLimP','d0','d1','de','ate','sems','vends','rede','loja','busca','ufs','cids','prods','grupos','minRk','ordCli','abaRk','nivelRk','abaPr','lim','limL','ord','fAberto','mtzC','mtzP','critVV','limC','limP','limMC','limMP','limN','bMC','bMP','aviso'];
 function snapS(){ const o={}; CAMPOS_S.forEach(k=>o[k]=S[k]); return {S:JSON.parse(JSON.stringify(o)),y:window.scrollY}; }
-function entrouTela(p){ telaAtual=p; S.lim=20;S.limL=30;S.ord={};S.limC=10;S.limP=10;S.limMC=40;S.limMP=40;S.limN=10;S.bMC='';S.bMP='';S.fAberto=(p==='prodloja'&&!S.prods.length&&!S.grupos.length); render(); window.scrollTo(0,0); }
+function entrouTela(p){ telaAtual=p; if(p==='pedidos'){ S.pedLoja=''; S.pedAberto=''; } S.lim=20;S.limL=30;S.ord={};S.limC=10;S.limP=10;S.limMC=40;S.limMP=40;S.limN=10;S.bMC='';S.bMP='';S.fAberto=(p==='prodloja'&&!S.prods.length&&!S.grupos.length); render(); window.scrollTo(0,0); }
 function ir(p){ if(pagina()===p){ render(); return; } history.pushState({app:1,d:PILHA.length,nav:1},'','#'+p); entrouTela(p); }
 function abrirDetalhe(dest,mud){
   PILHA.push(snapS()); Object.assign(S,mud);
@@ -1158,7 +1159,7 @@ function pedHtml(p,saiu){
   const aberto=S.pedAberto===p.k, nIt=p.itens.filter(i=>!i.saiu).length, cortes=p.itens.filter(i=>i.saiu).length;
   const onde=(p.cid?' · '+esc(titulo(p.cid))+'/'+esc(p.uf):'')+(verTodos()&&p.col?' · <b>'+esc(nomeColab(p.col))+'</b>':'');
   const sub=saiu?`Pedido ${esc(p.num)} · <b class="nq">${pac(p.qSaiu)}</b>${onde} · saiu ${horaBR(p.saiu)}`:`Pedido ${esc(p.num)} · ${nIt} ${nIt>1?'itens':'item'} · <b class="nq">${pac(p.q)}</b>${cortes?` · <b style="color:var(--ruim)">${cortes} saiu</b>`:''}${onde}`;
-  let h=`<div class="ped ${aberto?'on':''} ${saiu?'fora':''}"><button aria-expanded="${aberto}" onclick="S.pedAberto=S.pedAberto==='${p.k}'?'':'${p.k}';render()">
+  let h=`<div class="ped ${aberto?'on':''} ${saiu?'fora':''}"><button aria-expanded="${aberto}" onclick="${aberto?'voltar()':`abrirDetalhe('pedidos',{pedAberto:'${p.k}'})`}">
     <span class="cod">${esc(p.cli)}</span><span class="nm">${esc(p.loja)}</span><span class="vl">${nf0.format(Math.round((saiu?p.vSaiu:p.v)/100))}</span><span class="dt">${dataBR(p.data)}</span>${diasHtml(diasDesde(p.data,saiu?p.saiu:null))}
     <span class="sb2"><span>${sub}</span></span></button>`;
   if(aberto){
@@ -1168,10 +1169,44 @@ function pedHtml(p,saiu){
   }
   return h+'</div>';
 }
+function telaPedFoco(sel){
+  const lojaCli=sel?sel.cli:S.pedLoja;
+  const ab=sel?(sel.aberto?[sel]:[]):pedFiltrados(true,{busca:'',vend:''}), saiu=sel?(sel.aberto?[]:[sel]):pedFiltrados(false,{busca:'',vend:''});
+  const ref=sel||ab[0]||saiu[0]||{cli:lojaCli,loja:'Loja '+lojaCli,cid:'',uf:''};
+  const tot=ab.reduce((s,p)=>s+p.v,0), totQ=ab.reduce((s,p)=>s+(p.q||0),0), mais=ab.reduce((m,p)=>!m||p.data<m?p.data:m,'');
+  let h=`<div class="focobar"><button class="mais" style="margin:0" onclick="voltar()">‹ ${sel&&S.pedLoja?'Voltar para a loja':'Ver todos os pedidos'}</button></div>`;
+  h+=`<div class="card cab-cli"><div class="foco-tit"><span class="cod">${esc(ref.cli)}</span><b>${esc(ref.loja)}</b></div>
+    <div class="nota" style="margin:6px 0 0">${sel?`Pedido <b>${esc(sel.num)}</b> · ${dataBR(sel.data)} · `:''}${ref.cid?esc(titulo(ref.cid))+'/'+esc(ref.uf):''}${verTodos()&&(sel||ref).col?' · '+esc(nomeColab((sel||ref).col)):''}</div></div>`;
+  h+=`<div class="kpis"><div class="kpi wide"><div class="rot">${sel?(sel.aberto?'Em aberto neste pedido':'Pedido que saiu da lista'):'Em aberto nesta loja'}</div>
+    <div class="val">${R(sel&&!sel.aberto?sel.vSaiu:tot)}</div><div class="det"><b class="nq">${pac(sel&&!sel.aberto?sel.qSaiu:totQ)}</b>${sel?'':` · ${ab.length} pedido${ab.length===1?'':'s'}${mais?' · mais antigo de '+dataBR(mais):''}`}</div></div></div>`;
+  if(sel){   // só o pedido, já aberto com os produtos
+    h+=`<div class="card" id="cardPeds"><h2>Produtos do pedido</h2>${pHead('Loja · pedido')}<div class="plista">${pedHtml(sel,!sel.aberto)}</div>
+      <p class="nota">Pacotes e valor de cada produto deste pedido. Item riscado = saiu do pedido (faturado, cortado ou cancelado).</p></div>`;
+    return h;
+  }
+  if(!ab.length) h+=`<div class="card"><div class="vazio">Nenhum pedido em aberto nesta loja.</div></div>`;
+  else{
+    const lp=ab.slice().sort((a,b)=>b.data.localeCompare(a.data)||b.v-a.v);
+    h+=`<div class="card" id="cardPeds"><h2>Pedidos desta loja <span class="tag">${lp.length}</span></h2>${pHead('Loja · pedido')}<div class="plista">${lp.map(p=>pedHtml(p,false)).join('')}</div>
+      ${pFoot(tot,`${lp.length} pedido${lp.length>1?'s':''} · ${pac(totQ)}`,mais)}<p class="nota">Toque num pedido para ver só ele, com os produtos.</p></div>`;
+    const pm=new Map();
+    for(const p of ab) for(const i of p.itens){ if(i.saiu) continue; let x=pm.get(i.pc); if(!x){ x={pc:i.pc,prod:i.prod,q:0,v:0,ped:new Set()}; pm.set(i.pc,x); } x.q+=i.q; x.v+=i.v; x.ped.add(p.k); }
+    const pl=[...pm.values()].sort((a,b)=>b.v-a.v);
+    const cols=[{t:'Produto',txt:1,cls:'nome l',s:x=>x.prod,h:x=>`${esc(x.prod)}<small>${esc(x.pc)}${x.ped.size>1?' · '+x.ped.size+' pedidos':''}</small>`},
+      {t:'Pacotes',s:x=>x.q,h:x=>`<span class="nq">${Q(x.q)}</span>`},{t:'Unit.<br>R$',s:x=>x.q?x.v/x.q:0,h:x=>x.q?`<span class="nu">${nf2.format(x.v/x.q/100)}</span>`:'–'},{t:'Total<br>R$',s:x=>x.v,h:x=>`<span class="nv">${nf2.format(x.v/100)}</span>`}];
+    h+=`<div class="card" id="cardProds"><h2>Produtos desta loja <span class="tag">${pl.length}</span></h2><div class="rol" style="max-height:520px">${tab('pedProd',cols,pl,{def:{c:3,d:-1},foot:['Total',Q(totQ),'',nf2.format(tot/100)]})}</div>
+      <p class="nota">Pacotes pendentes e valor de cada produto, somando os pedidos em aberto desta loja.</p></div>`;
+  }
+  if(saiu.length) h+=`<div class="card"><h2>Saíram da lista <span class="tag ok">${saiu.length}</span></h2><p class="nota" style="margin:-4px 0 6px">Pedidos desta loja faturados (ou cancelados) nos últimos 3 dias.</p>${pHead('Loja · pedido')}<div class="plista">${saiu.slice(0,30).map(p=>pedHtml(p,true)).join('')}</div></div>`;
+  return h;
+}
 function telaPedidos(){
   let h=topo('Pedidos em aberto',true)+'<main>';
   if(!PED.dados){ return h+(PED.erro?`<div class="aviso" style="background:var(--ruim-claro);color:var(--ruim)">Não foi possível carregar os pedidos: ${esc(PED.erro)}<br><button class="mais" onclick="PED.em=0;carregarPedidos(true)">Tentar de novo</button></div>`:'<div class="carregando" style="min-height:40vh"><div class="spin"></div><div>Carregando pedidos…</div></div>')+rodape()+'</main>'; }
   h+=statusPed();
+  // v23: MODO FOCO — tocou numa loja ou num pedido: a tela mostra só aquilo (o resto some); "Ver todos" / voltar do celular sai
+  const selP=S.pedAberto?PED.dados.pedidos.find(p=>p.k===S.pedAberto):null;
+  if(selP||S.pedLoja) return h+telaPedFoco(selP)+rodape()+'</main>';
   // filtros: vendedor (quem vê vários) e busca
   const cols=[...new Set(PED.dados.pedidos.filter(p=>p.aberto).map(p=>p.col).filter(Boolean))].sort((a,b)=>nomeColab(a).localeCompare(nomeColab(b)));
   h+=`<div class="card" style="padding:12px"><div class="filtros">
@@ -1183,7 +1218,7 @@ function telaPedidos(){
   if(!ab.length) h+=`<div class="card"><div class="vazio">Nenhum pedido em aberto${S.pedBusca||S.pedVend?' com esses filtros':''}.</div></div>`;
   else{
     // 1) resumo por loja (código, loja, valor) — tocar abre os pedidos da loja
-    h+=`<div class="card"><h2>Por loja <span class="tag">${ls.length}</span></h2>${pHead('Loja')}<div class="plista">${ls.slice(0,S.pedLimL).map(l=>`<div class="ped ${S.pedLoja===l.cli?'on':''}"><button onclick="S.pedLoja=S.pedLoja==='${esc(l.cli)}'?'':'${esc(l.cli)}';S.pedAberto='';render();if(S.pedLoja)setTimeout(()=>{const e=document.getElementById('cardPeds');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})},30)">
+    h+=`<div class="card"><h2>Por loja <span class="tag">${ls.length}</span></h2>${pHead('Loja')}<div class="plista">${ls.slice(0,S.pedLimL).map(l=>`<div class="ped"><button onclick="abrirDetalhe('pedidos',{pedLoja:'${esc(l.cli)}',pedAberto:''})">
       <span class="cod">${esc(l.cli)}</span><span class="nm">${esc(l.loja)}</span><span class="vl">${nf0.format(Math.round((l.v)/100))}</span><span class="dt">${dataBR(l.mais)}</span>${diasHtml(diasDesde(l.mais))}
       <span class="sb2"><span>${l.n} pedido${l.n>1?'s':''} · <b class="nq">${pac(l.q)}</b>${l.cid?' · '+esc(titulo(l.cid))+'/'+esc(l.uf):''}${verTodos()?' · <b>'+[...l.cols].map(c=>esc(nomeColab(c))).join(', ')+'</b>':''}</span></span></button></div>`).join('')}</div>
       ${pFoot(tot,`${ls.length} loja${ls.length>1?'s':''} · ${ab.length} pedido${ab.length>1?'s':''} · ${pac(totQ)}`,mais)}
@@ -1224,7 +1259,7 @@ function vvPedidos(){
   const vs=verTodos()&&S.vends.length?new Set(S.vends.map(i=>chaveTxt(M.vend[i]))):null;
   const ab=pedFiltrados(true,{busca:'',vend:'',loja:'',vends:vs}), ls=lojasPed(ab), tot=ab.reduce((s,p)=>s+p.v,0);
   return `<div class="secao">Pedidos em aberto</div><div class="card"><h2>${R(tot)} <span class="tag">${ab.length} pedido${ab.length===1?'':'s'}</span></h2>
-    ${ls.length?`${pHead('Loja')}<div class="plista">${ls.slice(0,8).map(l=>`<div class="ped"><button onclick="S.pedLoja='${esc(l.cli)}';S.pedVend='';S.pedBusca='';S.pedAberto='';abrirDetalhe('pedidos',{})"><span class="cod">${esc(l.cli)}</span><span class="nm">${esc(l.loja)}</span><span class="vl">${nf0.format(Math.round((l.v)/100))}</span><span class="dt">${dataBR(l.mais)}</span>${diasHtml(diasDesde(l.mais))}<span class="sb2"><span>${l.n} pedido${l.n>1?'s':''} · <b class="nq">${pac(l.q)}</b></span></span></button></div>`).join('')}</div>${pFoot(tot,`${ls.length} loja${ls.length>1?'s':''} · ${ab.length} pedido${ab.length>1?'s':''} · ${pac(ab.reduce((s,p)=>s+(p.q||0),0))}${ls.length>8?' (todas)':''}`,ab.reduce((m,p)=>!m||p.data<m?p.data:m,''))}<p class="nota">Data e Dias = pedido mais antigo da loja ainda sem faturar.</p>`:'<div class="vazio">Nenhum pedido em aberto.</div>'}
+    ${ls.length?`${pHead('Loja')}<div class="plista">${ls.slice(0,8).map(l=>`<div class="ped"><button onclick="abrirDetalhe('pedidos',{pedLoja:'${esc(l.cli)}',pedVend:'',pedBusca:'',pedAberto:''})"><span class="cod">${esc(l.cli)}</span><span class="nm">${esc(l.loja)}</span><span class="vl">${nf0.format(Math.round((l.v)/100))}</span><span class="dt">${dataBR(l.mais)}</span>${diasHtml(diasDesde(l.mais))}<span class="sb2"><span>${l.n} pedido${l.n>1?'s':''} · <b class="nq">${pac(l.q)}</b></span></span></button></div>`).join('')}</div>${pFoot(tot,`${ls.length} loja${ls.length>1?'s':''} · ${ab.length} pedido${ab.length>1?'s':''} · ${pac(ab.reduce((s,p)=>s+(p.q||0),0))}${ls.length>8?' (todas)':''}`,ab.reduce((m,p)=>!m||p.data<m?p.data:m,''))}<p class="nota">Data e Dias = pedido mais antigo da loja ainda sem faturar.</p>`:'<div class="vazio">Nenhum pedido em aberto.</div>'}
     <button class="mais" onclick="S.pedLoja='';S.pedAberto='';ir('pedidos')">Ver todos os pedidos${ls.length>8?` (${ls.length} lojas)`:''}</button></div>`;
 }
 // ---------- Promotoras (só administrador): importar a planilha "Dados" e criar/ajustar logins pelo serviço do Supabase ----------

@@ -1,7 +1,7 @@
 // Service worker: guarda a "casca" do app para abrir rápido.
 // v19: também guarda as bibliotecas (login e gráficos, com versão fixa) e a fonte, para não baixar de novo a cada abertura.
 // Os dados de vendas ficam num cache próprio ('pss-dados', controlado pelo app: só baixa de novo quando o arquivo muda).
-const VERSAO = 'pss-v22';
+const VERSAO = 'pss-v23';
 const LIBS = 'pss-libs-1';
 const CASCA = ['./', './index.html', './config.js', './grupos.js', './manifest.json', './logo.png', './icon-192.png', './icon-512.png', './palamoni.png', './logo-escuro.png', './palamoni-escuro.png'];
 const MANTER = [VERSAO, LIBS, 'pss-dados'];
