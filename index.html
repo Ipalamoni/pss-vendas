@@ -32,6 +32,7 @@
   --tfoot:#E3F2EE; --tot:#F3F5F3; --toque:#F1EEE6; --desab:#F1EFEA; --desab-txt:#8D9792; --mz:#9AA5A0; --ico-ord:#8D9792;
   --vd:#66756F; --tag-txt:#8A5400; --aviso-txt:#6B4300; --sombra:rgba(30,42,38,.09); --veu:rgba(20,25,23,.45);
   --barra:#026E57; --rot-barra:#014D3D; --dentro-barra:#FFFFFF; --rot-lar:#8A5400; --grade:#ECE8DE; --foco:#FD9B02; --pill:#FD9B02; --pill-txt:#2B1A00;
+  --num-pac:#8A5400; --num-val:#026E57;   /* v22: pacotes (âmbar) e valores em R$ (verde) nas telas de pedidos */
   --raio:16px; --larg:760px;
 }
 [data-tema="escuro"]{
@@ -44,6 +45,7 @@
   --tfoot:#3E3D38; --tot:#343431; --toque:#3A3936; --desab:#2E2E2C; --desab-txt:#7D7B74; --mz:#6F6D66; --ico-ord:#8A8880;
   --vd:#A3A199; --tag-txt:#FFD08A; --aviso-txt:#FFD08A; --sombra:rgba(0,0,0,.35); --veu:rgba(0,0,0,.6);
   --barra:#3FAF8A; --rot-barra:#CFEFE3; --dentro-barra:#10241D; --rot-lar:#FFC266; --grade:#3A3936; --foco:#FDA526; --pill:#FDA526; --pill-txt:#2B1A00;
+  --num-pac:#FDB54D; --num-val:#5FD3AC;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--fundo);color:var(--texto);font-family:"Nunito Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:16px}
@@ -292,7 +294,10 @@ main{max-width:var(--larg)}
 .ped .dias.d3{background:var(--ruim-claro);color:var(--ruim)}
 .ped .nm{font-weight:800;font-size:14px;line-height:1.25;overflow-wrap:break-word}
 .ped.on>button{background:var(--toque);border-radius:10px}
-.ped .vl{font-weight:800;font-size:14px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ped .vl{font-weight:800;font-size:14px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--num-val)}
+.nq,.ped .sb2 b.nq,.kpi .det b.nq{color:var(--num-pac);font-weight:800}.nv{color:var(--num-val);font-weight:800}.nu{color:var(--num-val);font-weight:600;opacity:.9}
+.ped .itens td.q{color:var(--num-pac);font-weight:800}.ped .itens td.u{color:var(--num-val);font-weight:600}.ped .itens td.v{color:var(--num-val);font-weight:800}
+.ped .itens tr.saiu td.q,.ped .itens tr.saiu td.u,.ped .itens tr.saiu td.v{color:var(--sub);font-weight:600}
 .ped .sb2{grid-column:2 / span 4;font-size:12.5px;color:var(--sub);display:flex;justify-content:space-between;gap:8px}
 .ped .sb2 i{font-style:normal;white-space:nowrap}
 .ped .sb2 b{color:var(--texto);font-weight:700}
@@ -1152,12 +1157,12 @@ function statusPed(){
 function pedHtml(p,saiu){
   const aberto=S.pedAberto===p.k, nIt=p.itens.filter(i=>!i.saiu).length, cortes=p.itens.filter(i=>i.saiu).length;
   const onde=(p.cid?' · '+esc(titulo(p.cid))+'/'+esc(p.uf):'')+(verTodos()&&p.col?' · <b>'+esc(nomeColab(p.col))+'</b>':'');
-  const sub=saiu?`Pedido ${esc(p.num)} · ${pac(p.qSaiu)}${onde} · saiu ${horaBR(p.saiu)}`:`Pedido ${esc(p.num)} · ${nIt} ${nIt>1?'itens':'item'} · <b>${pac(p.q)}</b>${cortes?` · <b style="color:var(--ruim)">${cortes} saiu</b>`:''}${onde}`;
+  const sub=saiu?`Pedido ${esc(p.num)} · <b class="nq">${pac(p.qSaiu)}</b>${onde} · saiu ${horaBR(p.saiu)}`:`Pedido ${esc(p.num)} · ${nIt} ${nIt>1?'itens':'item'} · <b class="nq">${pac(p.q)}</b>${cortes?` · <b style="color:var(--ruim)">${cortes} saiu</b>`:''}${onde}`;
   let h=`<div class="ped ${aberto?'on':''} ${saiu?'fora':''}"><button aria-expanded="${aberto}" onclick="S.pedAberto=S.pedAberto==='${p.k}'?'':'${p.k}';render()">
     <span class="cod">${esc(p.cli)}</span><span class="nm">${esc(p.loja)}</span><span class="vl">${nf0.format(Math.round((saiu?p.vSaiu:p.v)/100))}</span><span class="dt">${dataBR(p.data)}</span>${diasHtml(diasDesde(p.data,saiu?p.saiu:null))}
     <span class="sb2"><span>${sub}</span></span></button>`;
   if(aberto){
-    h+=`<div class="itens"><table><thead><tr><th>Produto</th><th>Pacotes</th><th>Unit. R$</th><th>Total R$</th></tr></thead><tbody>${p.itens.map(i=>`<tr class="${i.saiu&&!saiu?'saiu':''}"><td class="nome">${esc(i.prod)}<small>${esc(i.pc)}${i.saiu&&!saiu?' · saiu do pedido '+horaBR(i.saiu):''}</small></td><td><b>${Q(i.q)}</b></td><td>${i.q?nf2.format(i.v/i.q/100):'–'}</td><td>${nf2.format(i.v/100)}</td></tr>`).join('')}</tbody>
+    h+=`<div class="itens"><table><thead><tr><th>Produto</th><th>Pacotes</th><th>Unit. R$</th><th>Total R$</th></tr></thead><tbody>${p.itens.map(i=>`<tr class="${i.saiu&&!saiu?'saiu':''}"><td class="nome">${esc(i.prod)}<small>${esc(i.pc)}${i.saiu&&!saiu?' · saiu do pedido '+horaBR(i.saiu):''}</small></td><td class="q">${Q(i.q)}</td><td class="u">${i.q?nf2.format(i.v/i.q/100):'–'}</td><td class="v">${nf2.format(i.v/100)}</td></tr>`).join('')}</tbody>
       <tfoot><tr><td class="l">Total ${saiu?'que saiu':'em aberto'}</td><td>${Q(p.itens.filter(i=>saiu||!i.saiu).reduce((s,i)=>s+i.q,0))}</td><td></td><td>${nf2.format((saiu?p.vSaiu:p.v)/100)}</td></tr></tfoot></table>
       ${p.cid?`<p class="nota">${esc(p.razao&&p.razao!==p.loja?p.razao+' · ':'')}${esc(p.cid)}/${esc(p.uf)}${p.rede?' · '+esc(p.rede):''}</p>`:''}</div>`;
   }
@@ -1174,13 +1179,13 @@ function telaPedidos(){
     <div class="full"><label for="pedB">Buscar</label><input id="pedB" type="search" class="lupa" placeholder="Loja, código ou nº do pedido" value="${esc(S.pedBusca)}" oninput="S.pedBusca=this.value;S.pedLimL=15;S.pedLimP=20;clearTimeout(window._tb);window._tb=setTimeout(()=>{render();const e=document.getElementById('pedB');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length);}},250)"></div></div></div>`;
   const ab=pedFiltrados(true,{loja:''}), ls=lojasPed(ab), tot=ab.reduce((s,p)=>s+p.v,0), totQ=ab.reduce((s,p)=>s+(p.q||0),0);
   const mais=ab.reduce((m,p)=>!m||p.data<m?p.data:m,'');
-  h+=`<div class="kpis"><div class="kpi wide"><div class="rot">Em aberto</div><div class="val">${R(tot)}</div><div class="det"><b>${pac(totQ)}</b> · ${ab.length} pedido${ab.length===1?'':'s'} · ${ls.length} loja${ls.length===1?'':'s'}${mais?' · mais antigo de '+dataBR(mais):''}</div></div></div>`;
+  h+=`<div class="kpis"><div class="kpi wide"><div class="rot">Em aberto</div><div class="val">${R(tot)}</div><div class="det"><b class="nq">${pac(totQ)}</b> · ${ab.length} pedido${ab.length===1?'':'s'} · ${ls.length} loja${ls.length===1?'':'s'}${mais?' · mais antigo de '+dataBR(mais):''}</div></div></div>`;
   if(!ab.length) h+=`<div class="card"><div class="vazio">Nenhum pedido em aberto${S.pedBusca||S.pedVend?' com esses filtros':''}.</div></div>`;
   else{
     // 1) resumo por loja (código, loja, valor) — tocar abre os pedidos da loja
     h+=`<div class="card"><h2>Por loja <span class="tag">${ls.length}</span></h2>${pHead('Loja')}<div class="plista">${ls.slice(0,S.pedLimL).map(l=>`<div class="ped ${S.pedLoja===l.cli?'on':''}"><button onclick="S.pedLoja=S.pedLoja==='${esc(l.cli)}'?'':'${esc(l.cli)}';S.pedAberto='';render();if(S.pedLoja)setTimeout(()=>{const e=document.getElementById('cardPeds');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})},30)">
       <span class="cod">${esc(l.cli)}</span><span class="nm">${esc(l.loja)}</span><span class="vl">${nf0.format(Math.round((l.v)/100))}</span><span class="dt">${dataBR(l.mais)}</span>${diasHtml(diasDesde(l.mais))}
-      <span class="sb2"><span>${l.n} pedido${l.n>1?'s':''} · <b>${pac(l.q)}</b>${l.cid?' · '+esc(titulo(l.cid))+'/'+esc(l.uf):''}${verTodos()?' · <b>'+[...l.cols].map(c=>esc(nomeColab(c))).join(', ')+'</b>':''}</span></span></button></div>`).join('')}</div>
+      <span class="sb2"><span>${l.n} pedido${l.n>1?'s':''} · <b class="nq">${pac(l.q)}</b>${l.cid?' · '+esc(titulo(l.cid))+'/'+esc(l.uf):''}${verTodos()?' · <b>'+[...l.cols].map(c=>esc(nomeColab(c))).join(', ')+'</b>':''}</span></span></button></div>`).join('')}</div>
       ${pFoot(tot,`${ls.length} loja${ls.length>1?'s':''} · ${ab.length} pedido${ab.length>1?'s':''} · ${pac(totQ)}`,mais)}
       ${ls.length>S.pedLimL?`<button class="mais" onclick="S.pedLimL+=20;render()">Mostrar mais lojas (${ls.length-S.pedLimL})</button>`:''}<p class="nota">Toque numa loja para ver os pedidos dela. Data e Dias = do pedido mais antigo da loja ainda sem faturar.</p></div>`;
     // 2) pedidos (abre os produtos)
@@ -1201,7 +1206,7 @@ function telaPedidos(){
     const lj2=S.pedLoja?lojasPed(lp2)[0]:null;
     const escopo=sel?`Pedido ${esc(sel.num)} · ${esc(sel.cli)} ${esc(sel.loja)}`:lj2?`${esc(lj2.cli)} ${esc(lj2.loja)} · ${lp2.length} pedido${lp2.length>1?'s':''}`:`Todos os ${lp2.length} pedidos${S.pedVend?' de '+esc(nomeColab(lp2[0]&&lp2[0].col)):''}`;
     const cols=[{t:'Produto',txt:1,cls:'nome l',s:x=>x.prod,h:x=>`${esc(x.prod)}<small>${esc(x.pc)}${!sel&&x.ped.size>1?' · '+x.ped.size+' pedidos':''}</small>`},
-      {t:'Pacotes',s:x=>x.q,h:x=>`<b>${Q(x.q)}</b>`},{t:'Unit.<br>R$',s:x=>x.q?x.v/x.q:0,h:x=>x.q?nf2.format(x.v/x.q/100):'–'},{t:'Total<br>R$',s:x=>x.v,h:x=>nf2.format(x.v/100)}];
+      {t:'Pacotes',s:x=>x.q,h:x=>`<span class="nq">${Q(x.q)}</span>`},{t:'Unit.<br>R$',s:x=>x.q?x.v/x.q:0,h:x=>x.q?`<span class="nu">${nf2.format(x.v/x.q/100)}</span>`:'–'},{t:'Total<br>R$',s:x=>x.v,h:x=>`<span class="nv">${nf2.format(x.v/100)}</span>`}];
     h+=`<div class="card" id="cardProds"><h2>Produtos <span class="tag">${pl.length}</span></h2>
       <span class="selchip" style="background:var(--th);color:var(--verde-esc)">${escopo}${sel||lj2?`<button aria-label="Ver todos" onclick="S.pedAberto='';S.pedLoja='';render()">✕</button>`:''}</span>
       <div class="rol" style="max-height:520px">${tab('pedProd',cols,pl,{def:{c:3,d:-1},foot:['Total',Q(tq),'',nf2.format(tv/100)]})}</div>
@@ -1219,7 +1224,7 @@ function vvPedidos(){
   const vs=verTodos()&&S.vends.length?new Set(S.vends.map(i=>chaveTxt(M.vend[i]))):null;
   const ab=pedFiltrados(true,{busca:'',vend:'',loja:'',vends:vs}), ls=lojasPed(ab), tot=ab.reduce((s,p)=>s+p.v,0);
   return `<div class="secao">Pedidos em aberto</div><div class="card"><h2>${R(tot)} <span class="tag">${ab.length} pedido${ab.length===1?'':'s'}</span></h2>
-    ${ls.length?`${pHead('Loja')}<div class="plista">${ls.slice(0,8).map(l=>`<div class="ped"><button onclick="S.pedLoja='${esc(l.cli)}';S.pedVend='';S.pedBusca='';S.pedAberto='';abrirDetalhe('pedidos',{})"><span class="cod">${esc(l.cli)}</span><span class="nm">${esc(l.loja)}</span><span class="vl">${nf0.format(Math.round((l.v)/100))}</span><span class="dt">${dataBR(l.mais)}</span>${diasHtml(diasDesde(l.mais))}<span class="sb2"><span>${l.n} pedido${l.n>1?'s':''} · <b>${pac(l.q)}</b></span></span></button></div>`).join('')}</div>${pFoot(tot,`${ls.length} loja${ls.length>1?'s':''} · ${ab.length} pedido${ab.length>1?'s':''} · ${pac(ab.reduce((s,p)=>s+(p.q||0),0))}${ls.length>8?' (todas)':''}`,ab.reduce((m,p)=>!m||p.data<m?p.data:m,''))}<p class="nota">Data e Dias = pedido mais antigo da loja ainda sem faturar.</p>`:'<div class="vazio">Nenhum pedido em aberto.</div>'}
+    ${ls.length?`${pHead('Loja')}<div class="plista">${ls.slice(0,8).map(l=>`<div class="ped"><button onclick="S.pedLoja='${esc(l.cli)}';S.pedVend='';S.pedBusca='';S.pedAberto='';abrirDetalhe('pedidos',{})"><span class="cod">${esc(l.cli)}</span><span class="nm">${esc(l.loja)}</span><span class="vl">${nf0.format(Math.round((l.v)/100))}</span><span class="dt">${dataBR(l.mais)}</span>${diasHtml(diasDesde(l.mais))}<span class="sb2"><span>${l.n} pedido${l.n>1?'s':''} · <b class="nq">${pac(l.q)}</b></span></span></button></div>`).join('')}</div>${pFoot(tot,`${ls.length} loja${ls.length>1?'s':''} · ${ab.length} pedido${ab.length>1?'s':''} · ${pac(ab.reduce((s,p)=>s+(p.q||0),0))}${ls.length>8?' (todas)':''}`,ab.reduce((m,p)=>!m||p.data<m?p.data:m,''))}<p class="nota">Data e Dias = pedido mais antigo da loja ainda sem faturar.</p>`:'<div class="vazio">Nenhum pedido em aberto.</div>'}
     <button class="mais" onclick="S.pedLoja='';S.pedAberto='';ir('pedidos')">Ver todos os pedidos${ls.length>8?` (${ls.length} lojas)`:''}</button></div>`;
 }
 // ---------- Promotoras (só administrador): importar a planilha "Dados" e criar/ajustar logins pelo serviço do Supabase ----------
