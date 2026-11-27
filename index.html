@@ -58,7 +58,8 @@ button,select,input{font-family:inherit;font-size:16px}
 main{max-width:760px;margin:0 auto;padding:14px 14px 40px}
 .prot{font-size:12.5px;color:var(--sub);text-align:center;margin:2px 0 12px}
 .card{background:var(--card);border-radius:var(--raio);padding:14px;box-shadow:0 1px 3px var(--sombra);margin-bottom:12px}
-.card h2{font-size:16px;margin:0 0 10px;color:var(--verde-esc);font-weight:800}
+.card h2{font-size:17px;margin:0 0 12px;color:var(--verde-esc);font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card .rol + h2,.card .vazio + h2{margin-top:22px;padding-top:16px;border-top:2px dashed var(--linha)}   /* 2º título dentro do mesmo quadro (ex.: Piores clientes) */
 .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .kpi{background:var(--card);border-radius:var(--raio);padding:12px 13px;box-shadow:0 1px 3px var(--sombra);border-top:4px solid var(--verde)}
 .kpi.lar{border-top-color:var(--laranja)}
@@ -200,7 +201,10 @@ table.mtz td.tot,table.mtz th.tot{background:var(--tot)}
 table.mtz .pct{padding:2px 4px;font-size:12px}
 .mz{color:var(--mz)}
 .vvkpi .val{font-size:20px}
-.secao{font-size:13px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin:18px 2px 8px}
+/* v24: títulos de seção em faixa (cor de fundo + barra laranja à esquerda), para marcar bem a troca de assunto na tela longa */
+.secao{display:flex;align-items:center;gap:8px;font-size:15.5px;font-weight:800;color:var(--verde-esc);background:var(--th);border-left:5px solid var(--laranja);border-radius:12px;padding:11px 14px;margin:30px 0 12px;letter-spacing:-.1px;box-shadow:0 1px 2px var(--sombra)}
+.secao::after{content:"";flex:1;height:2px;background:var(--th-borda);opacity:.55;border-radius:2px;margin-left:6px}
+main>.secao:first-child{margin-top:8px}
 
 /* v10: acessibilidade e acabamento */
 :focus{outline:none}
@@ -1710,7 +1714,7 @@ function telaVV(){
     const cols=[{t:'Vendedor',txt:1,cls:'nome l',s:x=>nomeVend(x.v),h:x=>`${esc(nomeVend(x.v))}${VENDEDORES.some(y=>y[1]===M.vend[x.v])?'':'<small>outro colaborador</small>'}`},
       {t:'Venda<br>R$',s:x=>x.fat,h:x=>Rt(x.fat)},{t:'DEV+<wbr>TRC R$',s:x=>x.dt,h:x=>Rt(x.dt)},{t:'%',s:x=>x.fat>0?x.dt/x.fat:null,h:x=>pctCel(x.fat,x.dt)},
       {t:'Clien-<wbr>tes',s:x=>x.pos,h:x=>Q(x.pos)},{t:'Novos',s:x=>x.nov,h:x=>!novoDisp()||semHist&&P.ate<NOVO_MESES?'–':Q(x.nov)}];
-    h+=`<div class="card"><h2>Resumo por vendedor <span class="tag">${lv.length}</span></h2><div class="rol" style="max-height:480px">${tab('vvV',cols,lv,{cls:'pl',tr:x=>`onclick="abrirVendVV(${x.v})" class="click"`,foot:['Total',Rt(t.fat),Rt(t.dt),pctCel(t.fat,t.dt),Q(nPos),Q(nNov)]})}</div>
+    h+=`<div class="secao">Vendedores</div><div class="card"><h2>Resumo por vendedor <span class="tag">${lv.length}</span></h2><div class="rol" style="max-height:480px">${tab('vvV',cols,lv,{cls:'pl',tr:x=>`onclick="abrirVendVV(${x.v})" class="click"`,foot:['Total',Rt(t.fat),Rt(t.dt),pctCel(t.fat,t.dt),Q(nPos),Q(nNov)]})}</div>
       <p class="nota">Toque num vendedor para ver só ele (${notaVoltar}) Clientes e novos contam por vendedor; no total, o cliente atendido por dois vendedores conta uma vez. ${notaToque}</p></div>`;
   }
   // mês a mês
@@ -1729,7 +1733,7 @@ function telaVV(){
   const notaCrit=S.critVV==='pct'?`Melhores = menor % de trocas + devoluções (empate: maior venda); piores = maior %.${S.minRk>0?` Só quem vendeu pelo menos R$ ${nf0.format(S.minRk)}.`:''}`:'Melhores = maiores vendas; piores = menores vendas (com venda no período).';
   const cM=listaMP(d.porC,'c',true), cP=listaMP(d.porC,'c',false), pM=listaMP(d.porP,'p',true), pP=listaMP(d.porP,'p',false);
   const colsC=[colRank,colLoja,colVenda,colDT,colPct()], colsP=[colRank,colProd,colVenda,colDT,colPct()];
-  const bloco=(id,tit,l,cols,tr,limK)=>`<h2 style="margin-top:6px">${tit} <span class="tag">${l.length}</span></h2>${l.length?`<div class="rol" style="max-height:440px">${tab(id,cols,l,{lim:S[limK],tr})}</div>`:'<div class="vazio">Nenhum.</div>'}`;
+  const bloco=(id,tit,l,cols,tr,limK)=>`<h2>${tit} <span class="tag">${l.length}</span></h2>${l.length?`<div class="rol" style="max-height:440px">${tab(id,cols,l,{lim:S[limK],tr})}</div>`:'<div class="vazio">Nenhum.</div>'}`;
   h+='<div id="vvPed" style="display:contents">'+vvPedidos()+'</div>';
   h+=`<div class="secao">Clientes</div><div class="card">${crit}${bloco('vvCm','Melhores clientes',cM,colsC,trLojaCli,'limC')}${bloco('vvCp','Piores clientes',cP,colsC,trLojaCli,'limC')}
     ${Math.max(cM.length,cP.length)>S.limC?`<button class="mais" onclick="S.limC+=10;render()">Mostrar mais clientes</button>`:''}<p class="nota">${notaCrit} Toque num cliente para abrir em Clientes (${notaVoltar})</p></div>`;
